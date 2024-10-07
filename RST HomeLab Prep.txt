@@ -1,0 +1,6 @@
+Team Rivan YT
+
+Install Home Lab: https://www.youtube.com/watch?v=QzY_mqlY9E8
+
+#cat /etc/udev/rules.d/70-persistent-net.rules
+#rm -r /etc/udev/rules.d/70-persistent-net.rules

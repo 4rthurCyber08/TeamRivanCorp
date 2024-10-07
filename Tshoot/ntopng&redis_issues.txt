@@ -1,0 +1,24 @@
+Problem:
+ntopng service keeps stopping
+redis service prompting failure to log in
+
+Solution
+Uninstall ntopng and redis and make sure to delete redis user account
+
+run -> lusrmgr.msc -> Users -> Delete Redis account
+
+or
+
+run -> netplwiz.exe -> advance tab -> Advanced user management -> Users -> Delete Redis account
+
+Then reinstall ntopng and redis then restart computer.
+
+Make sure appropriate services are running: services.msc
+	ntopng
+	nprobe
+	redis
+
+**
+-n 192.168.108.2:2055 nprobe 
+localhost:3000
+
