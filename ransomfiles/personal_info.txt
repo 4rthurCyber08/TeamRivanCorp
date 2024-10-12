@@ -1,7 +1,0 @@
-Name: John Castell
-Age: 35
-Birthdate: Aug 12 1987
-Profession: Excecutive Director
-Passport ID: 81F4359CD
-Phone Number: 09236484501
-SSS ID: 0244256775693
