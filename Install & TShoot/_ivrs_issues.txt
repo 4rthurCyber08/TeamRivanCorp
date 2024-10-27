@@ -1,0 +1,9 @@
+#@Fix IVRS (No configure terminal)
+#@Check Files
+sh flash: | inc .ivr
+more flash:ivr.txt
+
+config t
+ application
+  no service callqueue flash:app-b-acd-2.1.2.2.tcl
+  no service rivanaa flash:app-b-acd-aa-2.1.2.2.tcl

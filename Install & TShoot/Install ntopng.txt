@@ -1,0 +1,34 @@
+Download ntopng and it's necessary aps:
+ntopng : https://packages.ntop.org/
+	ntopng
+	nprobe
+	ntap_remote
+nmap & npcap : https://nmap.org/
+Microsoft VC++ Redist x86
+Microsoft VC++ Redist x64
+
+Step 1: Install Microsoft VC++ Redist (x86 & x64)
+		Install nmap & npcap (Preferably 802.1x and API are checked)
+
+Step 2: Install ntopng 
+		Just keep clicking next. No further configurations necessary.
+
+Step 3: Install nprobe
+		Use: -n 192.168.108.2:2055
+		Then just keep clicking next. No other config necessary.
+
+Step 4: Install ntap_remote
+
+Step 5: in services.msc Start: redist, ntopng, nprobe
+
+Step 6: Open a browser and on the address bar, search: localhost:3000
+
+Step 7: User: admin
+		Pass: admin
+		
+		User & Pass is up to you
+		
+		(For Lab)
+		User: C1sc0123
+		Pass: C1sc0123
+		

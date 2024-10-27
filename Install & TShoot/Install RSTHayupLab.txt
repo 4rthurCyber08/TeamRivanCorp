@@ -1,0 +1,10 @@
+https://www.youtube.com/watch?v=dq_gjAf3_Rs
+https://www.youtube.com/watch?v=QzY_mqlY9E8
+
+user: root
+pass: C1sc0123
+
+Network Adapter: NAT
+		rm -r /etc/udev/r [Press TAB] /7 [Press TAB]
+remove? Yes
+		reboot
