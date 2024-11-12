@@ -1,11 +1,15 @@
-CCNA Exam: https://drive.google.com/drive/folders/1X97d51QwKcr7-gXuM7RjRRHm4htfKl7Y?usp=drive_link
+Exams
+-CCNA:                  https://drive.google.com/drive/folders/1X97d51QwKcr7-gXuM7RjRRHm4htfKl7Y?usp=drive_link
+-CCNP ENCOR/ENARSI:     https://drive.google.com/drive/u/1/folders/1B9F2QFtoX4fuM2mCr8sh7za02zWDihYd
 
 
-#Apps
-Windows Server 2022:   https://drive.google.com/file/d/1C9jJXH5tp42VSaYHypkIKfei3wBVsz8F/view?usp=drive_link
-CSR1000v & yVM:        https://1drv.ms/f/c/e07cb5392626399d/EoyoFB8yx0VAvjLzeK6Kw-EBzDsG5ftEy2bWOTrHhNQzJQ?e=EGxMmb
-ntopng (netflow):      https://1drv.ms/u/c/e07cb5392626399d/ESaILQghRDdApsiOE-kALRoBy8iS7XWWCwkTZxFKiqx3sA?e=ayb8ia
-rstHayupLab:           https://1drv.ms/u/c/e07cb5392626399d/ERy9fYLdUU9Hici4OqvGThkBiUdUPpedtrjQvU8f6RPdog?e=yQxHlP
-secureCRT:             https://1drv.ms/u/c/e07cb5392626399d/EZTfKUKF_ABHqcNIHbK7W2oB3khtjDLBJKRwvPrqfYZfEg?e=FV96vW
-VMWare Workstation:    https://1drv.ms/u/c/e07cb5392626399d/EZHRQEq5HpFOiopBDZnk0UMBdooav0IN4Xtup5l1OwKG6Q?e=ZhKWgB
-winSCP:                https://1drv.ms/u/c/e07cb5392626399d/EYzGKbElH5NCpjh4nDls7EQBteOoj4qHSfTYST2S0OulSA?e=B2Vdos
+Apps
+-Windows Server 2022:   https://drive.google.com/file/d/1C9jJXH5tp42VSaYHypkIKfei3wBVsz8F/view?usp=drive_link
+-CSR1000v & yVM:        https://1drv.ms/f/c/e07cb5392626399d/EoyoFB8yx0VAvjLzeK6Kw-EBzDsG5ftEy2bWOTrHhNQzJQ?e=EGxMmb
+-rstHayupLab:           https://1drv.ms/u/c/e07cb5392626399d/ERy9fYLdUU9Hici4OqvGThkBiUdUPpedtrjQvU8f6RPdog?e=yQxHlP
+-EveNG:                 https://1drv.ms/u/s!Aiyby3LMrI7Gg9sMt3u8fUcybrEglQ?e=g8lWgR
+-VMWare Workstation:    https://1drv.ms/u/c/e07cb5392626399d/EZHRQEq5HpFOiopBDZnk0UMBdooav0IN4Xtup5l1OwKG6Q?e=ZhKWgB
+
+-ntopng (netflow):      https://1drv.ms/u/c/e07cb5392626399d/ESaILQghRDdApsiOE-kALRoBy8iS7XWWCwkTZxFKiqx3sA?e=ayb8ia
+-secureCRT:             https://1drv.ms/u/c/e07cb5392626399d/EZTfKUKF_ABHqcNIHbK7W2oB3khtjDLBJKRwvPrqfYZfEg?e=FV96vW
+-winSCP:                https://1drv.ms/u/c/e07cb5392626399d/EYzGKbElH5NCpjh4nDls7EQBteOoj4qHSfTYST2S0OulSA?e=B2Vdos
