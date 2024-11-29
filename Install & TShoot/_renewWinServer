@@ -1,0 +1,4 @@
+@Powershell
+slmgr /rearm
+
+Then, restart pc.
