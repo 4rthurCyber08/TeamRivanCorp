@@ -1,0 +1,1 @@
+If ports end up amber, it means vlans assigned to those ports are missing. (VLANS 10, 50, 100)
