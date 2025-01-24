@@ -1,0 +1,268 @@
+Solution:
+
+1. Etherchannel
+	-Configure L2 Etherchannel on links between SW1, SW2, & SW3 with the following settings:
+		- SW1 must actively negotiate the IEEE standard protocol to SW2
+		- SW2 must passively negotiate the IEEE standard protocol to SW1
+		- SW2 & SW3 must both actively negotiate the Cisco Proprietary protocol to each other.
+		- Make sure to use the correct Port Channel number as specified in the topology.
+
+@SW1
+conf t
+ int range fa0/2-3
+	!- SW1 must actively negotiate the IEEE standard protocol to SW2
+	!- Make sure to use the correct Port Channel number as specified in the topology.
+  channel-group 12 mode active
+  channel-protocol lacp
+  no shut
+  end
+
+@SW2
+conf t
+ int range fa0/2-3
+	!- SW1 must actively negotiate the IEEE standard protocol to SW2
+	!- Make sure to use the correct Port Channel number as specified in the topology.
+  channel-group 12 mode passive
+  channel-protocol lacp
+  no shut 
+  end
+
+@SW2 & SW3
+conf t
+ int range fa0/4-5
+	!- SW2 & SW3 must both actively negotiate the Cisco Proprietary protocol to each other.
+	!- Make sure to use the correct Port Channel number as specified in the topology.
+  channel-group 45 mode desirable
+  channel-protocol pagp
+  no shut
+  end
+
+
+2. Trunk
+		-Trunk the links between SW1, SW2, & SW3 using the standard trunking protocol with the following settings.
+			- Make sure to allow only the necessary VLAN/s for each link.
+			- Set the native VLAN to VLAN 'Main'
+		
+We can do this in 2 ways:
+	-Apply trunk configurations from the 'int range command' or apply them from the 'portchannel'. 
+	This is because any configs applied to the portchannel will also be applied to the interfaces that belong to the specified portchannel.
+		-For this solution we will apply configs to the portchannel.
+
+@SW1 & SW2
+conf t
+ int po12
+	!-Trunk the links between SW1, SW2, & SW3 using the standard trunking protocol: dot1q (802.1q)
+  sw tr encaps dot1q
+	!- Make sure to allow only the necessary VLAN/s for each link.
+  sw tr allowed vlan 10,20
+	!- Set the native VLAN to VLAN 'Main'. If you don't know the vlan number of main, use a 'show vlan brief' command
+  sw tr native vlan 69
+  sw mo tr
+  end
+
+@SW2 & SW3
+conf t
+ int po45
+  sw tr encaps dot1q
+	!- Make sure to allow only the necessary VLAN/s for each link.
+  sw tr allowed vlan 10,20,100
+  sw tr native vlan 69
+  sw mo tr
+  end
+
+3. VTP
+	-Configure SW1 as a vtp server with a domain name: CCNA.
+		Set the VTP version to: 2
+		Set the VTP password to: s3cr3t
+			
+	-Configure SW2 & SW3 as a vtp client under the same domain as SW1
+	
+
+@SW1
+conf t
+	!-Configure SW1 as a vtp server with a domain name: CCNA.
+ vtp domain CCNA
+ vtp version 2
+ vtp mode server
+ 
+	!Set the VTP password to: s3cr3t
+ vtp pass s3cr3t
+ 
+	!Set the VTP version to: 2
+ end
+
+@SW2 & SW3
+conf t
+	!-Configure SW2 & SW3 as a vtp client under the same domain as SW1
+ vtp domain CCNA
+ vtp version 2
+ vtp mode client
+ vtp pass s3cr3t
+ end
+
+Verify: 'sh vtp status'
+
+4. VLANs
+	-Create the following VLANs on SW1
+		Voice: 100
+		Admin: 10
+		Main: 69
+		Finance: 20
+		Guest: 200
+	-Apply the IP addresses of each VLANs for all switches as specified in the topology.
+
+@SW1
+conf t
+	!-Create the following VLANs on SW1
+ vlan 100
+  name Voice
+ vlan 10
+  name Admin
+ vlan 69
+  name Main
+ vlan 20
+  name Finance
+ vlan 200
+  name Guest
+
+Verify: 'sh vlan br'
+
+@SW1
+conf t
+	!-Apply the IP addresses of each VLANs for all switches as specified in the topology.
+ int vlan 100
+  ip add 10.0.100.1 255.255.255.0
+  no shut
+ int vlan 69
+  ip add 192.168.69.1 255.255.255.224
+  no shut
+ int vlan 10
+  ip add 10.0.10.1 255.255.255.0
+  no shut
+ int vlan 20
+  ip add 10.0.20.1 255.255.255.0
+  no shut
+ int vlan 200
+  ip add 10.0.200.1 255.255.255.240
+  no shut
+  end
+
+@SW2
+conf t
+	!-Apply the IP addresses of each VLANs for all switches as specified in the topology.
+ int vlan 100
+  ip add 10.0.100.2 255.255.255.0
+  no shut
+ int vlan 69
+  ip add 192.168.69.2 255.255.255.224
+  no shut
+ int vlan 10
+  ip add 10.0.10.2 255.255.255.0
+  no shut
+ int vlan 20
+  ip add 10.0.20.2 255.255.255.0
+  no shut
+ int vlan 200
+  ip add 10.0.200.2 255.255.255.240
+  no shut
+  end
+
+@SW3
+conf t
+	!-Apply the IP addresses of each VLANs for all switches as specified in the topology.
+ int vlan 100
+  ip add 10.0.100.3 255.255.255.0
+  no shut
+ int vlan 69
+  ip add 192.168.69.3 255.255.255.224
+  no shut
+ int vlan 10
+  ip add 10.0.10.3 255.255.255.0
+  no shut
+ int vlan 20
+  ip add 10.0.20.3 255.255.255.0
+  no shut
+ int vlan 200
+  ip add 10.0.200.3 255.255.255.240
+  no shut
+  end
+  
+Verify: 'sh ip int br | ex una'
+  
+5. Switchport Access/Voice
+		-On all switches, assign each end device to their correct VLANs as specified in the topology.
+
+@SW1
+conf t
+ int fa0/1
+  sw mo ac
+  sw ac vlan 10
+  end
+  
+@SW2
+conf t
+ int fa0/1
+  sw mode access
+  sw access vlan 20
+  sw voice vlan 100
+  end
+  
+@SW3
+conf t
+ int fa0/1
+  sw mo ac
+  sw ac vlan 10
+ !-use a range command since PC4 & S2 are part of the same VLAN
+ int range fa0/2-3
+  sw mo ac
+  sw ac vlan 20
+
+
+6. DHCP
+	-Configure SW3 as a DHCP server for Finance with the following settings:
+		-Exclude the first 100 ips of the network.
+		-DHCP pool name: FinancePool
+		-Network: 10.0.20.0 255.255.255.0
+		-Default Gateway: 10.0.20.3
+		-Domain Name: ccnaFin.com
+	
+	-Configure SW3 as a DHCP server for Voice with the following settings:
+		-Exclude the first 50 ips of the network
+		-DHCP pool name: VoPool
+		-Network: 10.0.100.0 255.255.255.0
+		-Default Gateway: 10.0.100.1
+		-Domain Name: ccnaVo.com
+		
+		-Add DHCP service for PC2 & PC4 in order for them to obtain an IP.
+
+@SW3
+conf t
+	!-Exclude the first 100 ips of the network.
+ ip dhcp excluded-address 10.0.20.1 10.0.20.100
+	!-Exclude the first 50 ips of the network
+ ip dhcp excluded-address 10.0.100.1 10.0.100.50
+	!-Configure SW3 as a DHCP server for Finance
+ ip dhcp pool FinancePool
+  network 10.0.20.0 255.255.255.0
+  default-router 10.0.20.3
+  domain-name ccnaFin.com
+	!-Configure SW3 as a DHCP server for Voice
+ ip dhcp pool VoPool
+  network 10.0.100.0 255.255.255.0
+  default-router 10.0.100.1
+  domain-name ccnaVo.com
+  end
+
+@PC2 & PC4
+In order to add IPs via dhcp to PCs, 
+	select the PC
+	click on the 'desktop' tab
+	choose 'command prompt'
+	type the command:
+		ipconfig /renew
+
+Verify: @SW3 'sh ip dhcp bindings'
+
+	@IP Phone: If you click on the IP Phone then GUI tab. It should say 'Configuring CM List'
+		This implies it has a vlan and an ip address. 
+		Verify the ip address on SW3 and excecuting the command 'sh ip dhcp binding'
