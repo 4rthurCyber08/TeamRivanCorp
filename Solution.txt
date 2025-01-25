@@ -1,0 +1,89 @@
+Solution
+
+1. Configure Etherchannel on the links between CSW1 & CSW2
+	-Use the standard protocol for link aggregation
+	-CSW1 must actively negotiate forming an etherchannel
+	-CSW2 must passively negotiate forming an etherchannel
+	-Use the specified Port Channel number
+
+@CSW1
+conf t
+ int range fa0/10-11
+  channel-group 17 mode active
+  channel-protocol lacp
+  end
+
+@CSW2
+conf t
+ int range fa0/10-11
+  channel-group 17 mode passive
+  channel-protocol lacp
+  end
+  
+2. Configure Trunk links between CSW1, CSW2, ASW1, ASW2, & ASW3 
+using the standard trunking protocol with the following settings.
+	- Set the native VLAN to VLAN 'Main'
+	- Allow only VLANs:
+		Admin
+		Security
+		Voice
+		Main
+		Guest
+		HR
+		Printers
+
+@CSW1
+conf t
+ int po17
+  sw tru encaps dot1q
+  sw tru allowed vlan 12,25,65,69,80,100
+  sw mo tr
+ int range fa0/1-3
+  sw tru encaps dot1q
+  sw tru allowed vlan 12,25,65,69,80,100
+  sw mo tr
+  end
+
+@CSW2
+conf t
+ int po17
+  sw tru encaps dot1q
+  sw tru allowed vlan 12,25,65,69,80,100
+  sw mo tr
+ int range fa0/1-3
+  sw tru encaps dot1q
+  sw tru allowed vlan 12,25,65,69,80,100
+  sw mo tr
+  end
+
+@ASW1
+conf t
+ int range fa0/4-5
+  !sw tru encaps dot1q
+  sw tru allowed vlan 12,25,65,69,80,100
+  sw mo tr
+  end
+
+@ASW2 & ASW3
+conf t
+ int range fa0/3-4
+  !sw tru encaps dot1q
+  sw tru allowed vlan 12,25,65,69,80,100
+  sw mo tr
+  end
+  
+3. Configure DHCP for Admin and Voice VLANs
+	-Configure a DHCP server on CSW1 for Admin VLAN
+		-Exclude the first 120 ips for Admin VLAN
+		-set the default gateway for Admin VLAN to CSW1
+		-set the domain name to: siteACenter.com
+	
+	-Configure DHCP on CSW2 for Voice VLAN
+		-Exclude the first 60 ips for Admin VLAN
+		-set the default gateway for Admin VLAN to CSW2
+		-set the domain name to: siteAVoip.com
+
+@CSW1
+conf t
+ ip dhcp excluded-add 10.0.12.1  10.0.12.120
+ ip dhcp pool 
