@@ -480,6 +480,7 @@ conf t
  int lo0
   ip add 10.10.10.10 255.255.255.255
  int gi0/1
+  no sw
   ip add 10.2.4.1 255.255.255.252
   no shut
  vlan 12
@@ -526,6 +527,7 @@ conf t
  int lo0
   ip add 20.20.20.20 255.255.255.255
  int gi0/1
+  no sw
   ip add 10.2.4.5 255.255.255.252
   no shut
  vlan 12
@@ -753,51 +755,18 @@ wr
 
 Tasks:
 Site A
-1. Configure Etherchannel on the links between CSW1 & CSW2
-	-Use the standard protocol for link aggregation
-	-CSW1 must actively negotiate forming an etherchannel
-	-CSW2 must passively negotiate forming an etherchannel
-	-Use the specified Port Channel number
-	
-2. Configure Trunk links between CSW1, CSW2, ASW1, ASW2, & ASW3 
-using the standard trunking protocol with the following settings.
-	- Set the native VLAN to VLAN 'Main'
-	- Allow only VLANs:
-		Admin
-		Security
-		Voice
-		Main
-		Guest
-		HR
-		Printers
-	
-3. Configure DHCP for Admin and Voice VLANs
-	-Configure a DHCP server on CSW1 for Admin VLAN
-		-Exclude the first 120 ips for Admin VLAN
-		-set the default gateway for Admin VLAN to CSW1
-		-set the domain name to: siteACenter.com
-	
-	-Configure DHCP on CSW2 for Voice VLAN
-		-Exclude the first 60 ips for Admin VLAN
-		-set the default gateway for Admin VLAN to CSW2
-		-set the domain name to: siteAVoip.com
-
-4. Switchport: Assign end devices to their specified VLANs
-
-5. Add IP addresses to PC1, PC2 via DHCP
-
+1. Configure Trunk links between all Switches
+2. Configure Etherchannel on the links between CSW1 & CSW2
+3. Configure PVST for the vlans: 12,25,65,69,80,100,120
+	-Assign CSW1 as the primary root bridge
+	-Assign CSW2 as the secondary bridge
+4. Configure DHCP for Admin and Voice VLANs
+5. Assign end devices to their specified VLANs
 6. Configuree OSPF on CSW1, CSW2, R1, R2, R3
-	-Make sure CSW1 is the DR
-	-The link between R1 & R2 must be point-to-point
-	-CSW2 & R3 must be DROTHER
-	
+	-Point-to-point
+	-DROTHER
 7. Configure NAT on R1
-	-Create a named standard ACL called site_A_ACL
-		-Permit only Admin and Security VLAN
-		
 8. Configure ACL to prevent Guest vlan from accessing other vlans
-
-
 9. Configure CDP & LLDP
 10. Configure RSTP
 
