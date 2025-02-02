@@ -1,0 +1,4 @@
+Reverse Proxy/NATPortMapping
+conf t
+ access-list 7 permit any
+ ip nat inside source static tcp 10.10.10.10 80 208.8.8.101 8080
