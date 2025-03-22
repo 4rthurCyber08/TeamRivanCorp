@@ -1,0 +1,13 @@
+Paano install ung kubernetes
+1. Install Docker Desktop
+    - Make sure wag mo piliin ung WSL pag install
+2. Pag nainstall na, punta ka settings tapos enable mo Kubernetes
+3. Pag nakasetup na kubernetes, punta ka dito:
+    https://kubernetes.io/docs/tutorials/stateless-application/guestbook/
+Paano iinstall ung k9s?
+1.run mo to sa cmd
+curl.exe -A MS https://webinstall.dev/k9s | powershell
+
+2. tapos pag nakainstall na, run mo k9s sa commandline
+
+k9s
