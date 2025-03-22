@@ -1,0 +1,220 @@
+Step 1 - Inside 'CISCO_MODELING_LAB_2.5' folder, unzip/extract the following files to their own folder:
+	
+	- cml2_2.5.0-5_amd64-4.iso.zip
+	- CML25_License.7z
+	- refplat-20230117-fcs.iso.zip
+	
+	
+	- Go inside the 'refplat-20230117-fcs.iso' folder. 
+	
+		You need turn the python file 'cisco_x509_verify_release'
+		
+			To do this,
+				- Click on the Address Bar (The path file of the directory. Ex. C:\Users\Administrator\Documents\...)
+				
+				- Replace the path to: cmd
+					Then press Enter
+			
+				- cmd will now open with the current directory of the folder.
+					- Now excecute the line:
+						'py cisco_x509_verify_release.py3 -e CML-IMG-REL-CCO_RELEASE.pem -i refplat-20230117-fcs.iso -s refplat-20230117-fcs.iso.signature -v dgst -sha512'
+
+					- An error (FileNotFoundError) will appear, and a crcam2.cer will appear on the folder.
+						Open it and Install Certificate.
+							- Store Location: Current User
+							- Select, Automatically select the certificate store...
+							- Finish
+		
+	- Go inside the 'cml2_2.5.0-5_amd64-4.pkg'
+		
+		You need turn the python file 'cisco_x509_verify_release'
+		
+			To do this,
+				- Click on the Address Bar (The path file of the directory. Ex. C:\Users\Administrator\Documents\...)
+				
+				- Replace the path to: cmd
+					Then press Enter
+			
+				- cmd will now open with the current directory of the folder.
+					- Now excecute the line:
+						'py cisco_x509_verify_release.py3 -e CML-IMG-REL-CCO_RELEASE.pem -i refplat-20230117-fcs.iso -s refplat-20230117-fcs.iso.signature -v dgst -sha512'
+
+					- An error (FileNotFoundError) will appear, and a crcam2.cer will appear on the folder.
+						Open it and Install Certificate.
+							- Store Location: Current User
+							- Select, Automatically select the certificate store...
+							- Finish
+				
+Step 2 - Open 'cml2_2.5.0-5_amd64-4.ova' in VMWare. 
+	- VM name: CML-HayupLabs
+	- VM settings:
+		Memory: 32GB (Minimum should be 16GB)
+		IOS Image: refplat-20230117-fcs.iso
+			*Note: Device Status MUST be 'Connect at power on'
+		Network Adapter: VMnet1 or NAT (Anything but Bridged)
+		
+Step 3 - Turn on the VM and follow the procedure.
+	- Select *CML2 -- GNU/Linux
+	- Be patient and wait for the CML^2 -- 'Initial System Configuration 2.5.0' 
+		- Once the CML ASCII appears press ENTER (No Cursor allowed)
+		- Accept EULA (Press TAB to switch buttons)
+		- Welcome to the CML^2... Press ENTER (Continue)
+		- Brief Help (Continue)
+		- Two Interfaces... (Continue)
+		- Enter this systems's unique hostname: CMLHayup-controller
+		- Define username...	(Pass requires 8 char min)
+			Username: sysadmin
+			Password: C1sc0123
+			Confirm: C1sc0123
+			
+			-Your password should... (Yes)
+			-Pass not strong! (Yes)
+		
+		- Define username...for first user...	(Pass requires 8 char min)
+			Username: admin
+			Password: C1sc0123
+			Confirm: C1sc0123
+			
+			-Your password should... (Yes)
+			-Pass not strong! (Yes)
+		
+		- Optionally define a static IPv4 add... 
+			Select DHCP then (Continue)
+		
+		- PLease confirm...(Confirm)
+		- Reference Platform images...(Confirm)
+		
+		Now wait for images from the ISO to be copied.
+		
+		Once its completed it will prompt 'The system is now configured' 
+		Press ENTER (OK)
+
+Step 4 - Access CML^2 & Change SSH port
+	- After IOS images have been copied, Login to the CML^2 using the sysadmin account
+		login: sysadmin
+		pass: C1sc0123
+	
+	- Once logged in we need to change the SSH port to 1122
+		Enter commands on the console
+			- Gain root access: 
+				'sudo -E -s'
+				pass(if asked): C1sc0123
+			- Access sshd_config file:
+				'nano /etc/ssh/sshd_config'
+			
+			- Move to the line with #Port 22 (Navigate the text file using arrow buttons.) 
+				Remove the '#' sign, then change 22 to '1122'
+					Expected output: 
+						#Port 22	->		Port 1122
+			
+			- Save ( ctrl+s ) and Exit ( ctrl+x )
+	
+	- Now we need to restart the sshd service to apply the changes.
+		Enter commands on the console
+			- Identify ssh status:
+				'systemctl status ssh'
+			- Start the service:
+				'systemctl start ssh'
+			- Identify ssh status one more:
+				'systemctl status ssh'
+				
+				Expected Output is 'active (running)'
+	
+Step 5 - Transfer Crack file.
+	- Inside the VM, enter on the console:
+		- Change directory to /var/local/vir12/.local/lib/smart/
+			'cd /var/local/vir12/.local/lib/smart/'
+		- Identify files in the directory:
+			'ls'
+		- Delete the libsmartunified.so file
+			'rm -r libsmartunified.so'
+		
+	- Open the program WinSCP
+		- Select New Tab, then New Site
+		- Enter the following
+			File protocol: SFTP
+			Host name: The IP of your CML VM 
+				(If you don't know: Enter the command 'ip addr' on the VM console. Check the '3: bridge0' ip)
+			Port: 1122
+			Username: sysadmin
+			Password: C1sc0123
+		
+			Then, Login
+		- Continue connecting to an... (Accept)
+	
+	- On the left pane is the PCs file system, on the right pane is the CML VM.
+		- On the left pane, select the file path:	 C:\Users\.. (Depends on your PC)
+			- Open directory: Browse for the folder 'CML25_License' (This is from the extracted zip file.)
+		- On the right pane, select the file path:	 /home/sysadmin/
+			- Open directory: /tmp
+		
+		- From the left pane, transfer the 'libsmartunified.so' file to the right pane.
+		
+		Now we're donw with WinSCP.
+
+	- Return to the CML VM.
+		Enter commands on the console
+			- Change directory to the tmp folder:
+				'cd /tmp'
+			- Identify files in the directory:
+				'ls'
+			- Move the the libsmartunified.so file to the /var/local/virl2/.local/lib/smart/ directory
+				'mv libsmartunified.so /var/local/virl2/.local/lib/smart/'
+				
+				If requiring root access 'sudo -E -s'
+			
+			Finally, reboot the CML VM
+
+Step 6 - Licensing
+	- Access the CML VM IP address on a browser.
+		- Warning: Potential Security Rish Ahead (Advanced > Accept the Risk and Continue)
+		
+		- Login using the admin account (NOT sysadmin)
+		
+		- Dismiss prompts
+		
+		- Go to Tools > System Administration > Licensing
+			- On the Licensing file, scroll down and locate:
+				
+				Product Information
+				===================
+				UDI: SN:c727342a2c8,UUID:176a4d56-13d1-48fc-6d67-6fafe09bd1e0
+			
+			- Open the license.txt file on the CML25_License folder.
+				
+				On the last lines of the txt replace the portion:
+				
+					S:*****,U:*****-****-****-****-*******
+				
+				Be careful. DO NOT COPY & PASTE the entire UDI you've copied from the web ui.
+				
+					S: = must contain the SN value
+					U: = must contain the UUID value
+					
+				Expected output:
+				
+					S:c727342a2c8,U:176a4d56-13d1-48fc-6d67-6fafe09bd1e0
+				
+				*Note: Our UDI's are different.
+			
+			- Save the license.txt
+		
+		- Return to the Web UI. Go to Tools > Licensing
+			On the information: Before you :
+			- Choose the Product Configuration
+				- Enterprise Licese - CML-ENT-BASE
+				- Save
+			
+			The warning will be change to information:
+				- Click on Register
+					- Select the 'Start Here' (Highlighted in blue)
+						- Select 'Yes, My Smart Account is License Reservation Enabled'
+						- Generated Reservation Code
+						- Save to File...
+						- Then, 'Cancel'
+				
+				- Enter Reservation Authorization Code
+					- Attatch the License.txt to the Authorization Code File.
+					- Install Authorization Code
+				
+Finally, your copy of CML have a Full Enterprise License Indefinitely.
