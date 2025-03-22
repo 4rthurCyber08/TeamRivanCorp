@@ -1,0 +1,14 @@
+Area shape for RST Lab creation
+
+Step 1: Open the image in Paint
+
+		Hover the mouse on the device that will need a link.
+			On the bottom left of Paint, the coordinates of the position of the mouse relative to the image will be displayed.
+			
+Step 2: Apply the coords to the area shape command on the map portion of the image in IOU Lab
+
+			<area shape='circle' coords='57,250,30' href='telnet://{{IP}}:2001'>
+		
+			For coords='xAxis, yAxis, radius of circle'
+
+Step 3: Edit the lab that will contain the image and simply update the image for that lab.
