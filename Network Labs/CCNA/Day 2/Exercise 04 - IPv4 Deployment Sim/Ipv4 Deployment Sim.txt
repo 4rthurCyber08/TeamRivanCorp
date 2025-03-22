@@ -1,0 +1,285 @@
+Exercise 04
+IPv4 Deployment Sim
+
+For Accessing Devices
+
+ Device 	Port
+ R1 	 	2069
+ R2 	 	2070
+ R3 	 	2071
+ E1 	 	2072
+ E2 	 	2073
+ E3 	 	2074
+
+
+TASKS
+
+Connectivity between R1, R2, and R3 have been established.
+You are instructed to subnet a for a specified number of hosts for three new offices.
+
+    Subnet for the following offices:
+        1st Office with 125 hosts.      Use 10.0.0.0/8
+        2nd Office with 2600 hosts.   Use 172.16.0.0/16
+        3rd Office with 432 hosts.      Use 192.168.0.0/24
+
+    For the 1st office,
+        apply the first valid IP to E1.
+        apply the last valid IP to R1.
+
+    For the 2nd office,
+        apply the first valid IP to E2.
+        apply the last valid IP to R2.
+
+    For the 3rd office,
+        apply the first valid IP to E3.
+        apply the last valid IP to R3.
+
+    Set default routes for the following offices:
+        Set R1 as the default gateway for E1
+        Set R2 as the default gateway for E2
+        Set R3 as the default gateway for E3
+
+SOLUTION
+
+Use CSI Method
+
+1st Office:
+
+    Given: 10.0.0.0/8, 125 hosts
+
+    Convert: 125 hosts = 7 bits
+    Subtract: /32 - 7 bits = /25 new slash (4th Octet, 128i)
+    Ipasok 128i sa 4th Octet
+        10.0.0.128 /25 = 1st Office Network
+
+    Network:                  	10.0.0.128 255.255.255.128
+    1st Valid:                  10.0.0.129
+    Last Valid:					10.0.0.254
+    Last IP/Broadcast:    		10.0.0.255
+
+    NOT 1st Office:        		10.0.1.0
+
+
+2nd Office:
+
+    Given: 172.16.0.0/16, 2600 hosts
+
+    Convert: 2600 hosts = 12 bits
+    Subtract: /32 - 12 bits = /20 new slash (3rd Octet, 16i)
+    Ipasok 16i sa 3rd Octet
+        172.16.16.0 /20 = 2nd Office Network
+
+    Network:                   	172.16.16.0 255.255.240.0
+    1st Valid:                  172.16.16.1
+    Last Valid:                 172.16.31.254
+    Last IP/Broadcast:     		172.16.31.255
+
+    NOT 2nd Office:        		172.16.32.0
+
+
+3rd Office:
+
+    Given: 192.168.0.0/24, 432 hosts
+
+    Convert: 432 hosts = 9 bits
+    Subtract: /32 - 9 bits = /23 new slash (3rd Octet, 2i)
+    Ipasok 2i sa 3rd Octet
+        192.168.2.0 /23 = 3rd Office Network
+
+    Network:                   	192.168.2.0 255.255.254.0
+    1st Valid:                  192.168.2.1
+    Last Valid:                 192.168.3.254
+    Last IP/Broadcast:     		192.168.3.255
+
+    NOT 3rd Office:        		192.168.4.0
+
+
+2. For the 1st office,
+    - apply the first valid IP to E1.
+
+@E1
+conf t
+ int e0/1
+  ip add 10.0.0.129 255.255.255.128
+  no shut
+  end
+
+    - apply the last valid IP to R1.
+
+@R1
+conf t
+ int e0/1
+  ip add 10.0.0.254 255.255.255.128
+  no shut
+  end
+
+
+3. For the 2nd office,
+    - apply the first valid IP to E2.
+
+@E2
+conf t
+ int e0/2
+  ip add 172.16.16.1 255.255.240.0
+  no shut
+  end
+
+    - apply the last valid IP to R2.
+
+@R2
+conf t
+ int e0/2
+  ip add 172.16.31.254 255.255.240.0
+  no shut
+  end
+
+
+4. For the 3rd office,
+    - apply the first valid IP to E3.
+
+@E3
+conf t
+ int e0/3
+  ip add 192.168.2.1 255.255.254.0
+  no shut
+  end
+
+    - apply the last valid IP to R3
+
+@R3
+conf t
+ int e0/3
+  ip add 192.168.3.254 255.255.254.0
+  no shut
+  end
+
+5. Set default routes for the following offices:
+    - 1st office
+        Set R1 as the default gateway for E1
+
+@E1
+conf t
+ ip routing
+ ip route 0.0.0.0 0.0.0.0 10.0.0.254
+ end
+
+    - 2nd office
+        Set R2 as the default gateway for E2
+
+@E2
+conf t
+ ip routing
+ ip route 0.0.0.0 0.0.0.0 172.16.31.254
+ end
+
+    - 3rd office
+        Set R3 as the default gateway for E3
+
+@E3
+conf t
+ ip routing
+ ip route 0.0.0.0 0.0.0.0 192.168.3.254
+ end
+
+Verification:
+
+Since there is connectivity between R1,R2, and R3,
+E1, E2, and E3 should now be able to ping each other.
+
+@E1
+ping 172.16.16.1
+ping 192.168.2.1
+
+ping must be successful
+
+
+###########
+
+PRECONFIGURATIONS
+
+Name: Exercise 04
+Desc: IPv4 Deployment Sim
+
+***
+
+Netmap:
+
+R1    69
+R2    70
+R3    71
+E1    72
+E2    73
+E3    74
+
+69:0/1 72:0/1
+69:0/0 70:0/0
+70:0/2 73:0/2
+70:0/1 71:0/1
+71:0/3 74:0/3
+
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+
+@E1
+conf t
+ hostname E1
+ end
+
+@E2
+conf t
+ hostname E2
+ end
+
+@E3
+conf t
+ hostname E3
+ end
+
+@R1
+conf t
+ hostname R1
+ int e0/0
+  ip add 10.1.12.1 255.255.255.252
+  no shut
+ router ospf 1
+  router-id 1.0.0.1
+  network 10.1.12.0 0.0.0.3 area 0
+  end
+
+@R2
+conf t
+ hostname R2
+ int e0/0
+  ip add 10.1.12.2 255.255.255.252
+  no shut
+ int e0/1
+  ip add 10.1.12.5 255.255.255.252
+  no shut
+ router ospf 1
+  router-id 1.0.2.2
+  network 10.1.12.0 0.0.0.3 area 0
+  network 10.1.12.4 0.0.0.3 area 0
+  end
+
+@R3
+conf t
+ hostname R3
+ int e0/1
+  ip add 10.1.12.6 255.255.255.252
+  no shut
+ router ospf 1
+  router-id 1.0.0.3
+  network 10.1.12.4 0.0.0.3 area 0
+  end 

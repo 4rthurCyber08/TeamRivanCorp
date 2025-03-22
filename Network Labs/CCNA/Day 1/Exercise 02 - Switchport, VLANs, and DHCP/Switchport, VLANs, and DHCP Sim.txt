@@ -1,0 +1,320 @@
+Exercise 02
+Switchport, VLAN, & DHCP Sim
+
+For Accessing Devices
+
+ Device 	Port
+ P1 		2048
+ P2 		2049
+ P3 		2050
+ S1 		2051
+ S2 		2052
+ A1 		2053
+ A2 		2054
+ D1 		2055
+
+
+TASKS
+Switches are preconfigured, and R1 and S3 have IP connectivity and are inaccessible.
+E1 is also inaccessibe but can recieve an IP.
+
+You are instructed to assign end devices to their respective VLAN as specified in the topology.
+Then, configure D1 as a DHCP server for end devices with the appropriate settings.
+
+Complete the configurations to achieve these goals:
+    End devices must belong to the correct VLANs.
+	
+    D1 must provide DHCP service to devices on VLAN 8, VLAN 16, and VLAN Admin with the following settings.
+        Exclude the first and last 50 IPs of each VLAN.
+        D1 must be the gateway for each VLAN.
+        VLAN 8 domain must be FINANCE.COM
+        VLAN 16 domain must be SEC.NET
+        DNS server for each VLAN must be S3
+
+    End devices should obtain IP address from their VLANs and PCs should be able to ping dns.google.com (Except P1)
+
+
+SOLUTION
+
+1. End devices must belong to the correct VLANs.
+On A1, we can see that E1 should belong to VLAN Admin. Since we don't know its actual VLAN number we'll have to check using "show vlan brief"
+
+@A1
+show vlan brief
+! --we discover vlan admin is vlan 24
+conf t
+ int e0/3
+  switchport mode access
+  switchport access vlan 8
+  switchport voice vlan 24
+ int e0/1
+  switchport mode access
+  switchport access vlan 8
+ int e0/2
+  switchport mode access
+  switchport access vlan 16
+  end
+
+@A2
+conf t
+ int e0/1
+  switchport mode access
+  switchport access vlan 8
+ int e0/2
+  switchport mode access
+  switchport access vlan 16
+
+
+Verification:
+Simply use the "show vlan brief" command to double check if the ports belong to the correct VLAN.
+
+*NOTE: Notice how the interface e0/3 belongs to both VLAN 24 and VLAN 8. That's because it is configured with VOICE VLAN and ACCESS VLAN.
+
+
+2. D1 must provide DHCP service to devices on VLAN 8, VLAN 16, and VLAN Admin with the following settings:
+    - Exclude the first and last 50 IPs of each VLAN.
+    - D1 must be the gateway for each VLAN.
+    - VLAN 8 domain must be FINANCE.COM
+    - VLAN 16 domain must be SEC.NET
+    - DNS server for each VLAN must be S3
+
+
+On D1, use "show ip interface brief" command to identify the IP address of VLAN Admin.
+
+@D1
+conf t
+ ! -- Exclude the first 50 IPs of each VLAN.
+ !
+ ip dhcp excluded-address 172.16.8.1 172.16.8.50
+ ip dhcp excluded-address 192.168.16.1 192.168.16.50
+ ip dhcp excluded-address 10.0.24.1 10.0.24.50
+ !
+ ! -- Exclude the last 50 IPs of each VLAN.
+ !
+ ip dhcp excluded-address 172.16.8.204 172.16.8.254
+ ip dhcp excluded-address 192.168.16.204 192.168.16.254
+ ip dhcp excluded-address 10.0.24.204 10.0.24.254
+ !
+ ! -- No specification on dhcp pool name so just use any.
+ ip dhcp pool vlan8pool
+  network 172.16.8.0 255.255.255.0
+  !
+  ! -- D1 must be the gateway
+  default-router 172.16.8.254
+  domain-name FINANCE.COM
+  !
+  ! -- S3 must be the DNS Server
+  dns-server 10.1.2.1
+ ip dhcp pool vlan16pool
+  network 192.168.16.0 255.255.255.0
+  default-router 192.168.16.254
+  domain-name SEC.NET
+  dns-server 10.1.2.1
+ ip dhcp pool vlanadminpool
+  network 10.0.24.0 255.255.255.0
+  default-router 10.0.24.254 255.255.255.0
+  dns-server 10.1.2.1
+  end
+
+
+3. End devices should obtain IP address from their VLANs and PCs should be able to ping dns.google.com (Except P1)
+
+@P1, P2, P3, S1, S2
+conf t
+ int e0/0
+  no shut
+  ip add dhcp
+  end
+
+
+Verification:
+Ping "dns.google.com" on P2, and P3.
+Ping must be successful.
+
+
+
+###########
+
+PRECONFIGURATIONS
+
+
+Name: Exercise 02
+Desc: Switchport, VLAN, & DHCP Sim
+
+***
+
+Netmap:
+
+P1 - 48
+P2 - 49
+P3 - 50
+S1 - 51
+S2 - 52
+A1 - 53
+A2 - 54
+D1 - 55
+R1 - 56
+S3 - 57
+
+
+
+48:0/0 53:0/3
+53:0/1 49:0/0
+53:0/2 50:0/0
+53:0/0 55:0/1
+54:0/0 55:0/2
+54:0/1 51:0/0
+54:0/2 52:0/0
+56:0/0 55:0/0
+56:0/1 57:0/0
+
+***
+
+Preconfigs
+
+@alldevices
+conf t
+ no loggin cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+  end
+
+
+@P1
+conf t
+ hostname P1
+ ip domain lookup
+ int e0/0.24
+  encapsulation dot1q 24
+  ip add dhcp
+  no shut
+ end
+
+
+@P2
+conf t
+ hostname P2
+ ip domain lookup
+ end
+
+
+@P3
+conf t
+ hostname P3
+ ip domain lookup
+ end
+
+
+@S1
+conf t
+ hostname S1
+ ip domain lookup
+ end
+
+
+@S2
+conf t
+ hostname S2
+ ip domain lookup
+ end
+
+
+@A1
+conf t
+ hostname A1
+ int e0/0
+  sw tr encapsulation dot1q
+  sw mo tr
+  sw tr allowed vlan 8,16,24
+ vtp domain ccna
+ vtp version 2
+ vtp mode client
+ end
+
+
+@A2
+conf t
+ hostname A2
+ int e0/0
+  sw tr encapsulation dot1q
+  sw mo tr
+  sw tr allowed vlan 8,16,24
+ vtp domain ccna
+ vtp version 2
+ vtp mode client
+ end
+
+
+@D1
+conf t
+ hostname D1
+ int e0/0
+  no sw
+  ip add 10.1.1.1 255.255.255.0
+  no shut
+ int range e0/1-2
+  sw tr encapsulation dot1q
+  sw mo tr
+  sw tr allowed vlan 8,16,24
+ vtp domain ccna
+ vtp version 2
+ vtp mode server
+ vlan 8
+  exit
+ vlan 16
+  exit
+ vlan 24
+  name Admin
+  exit
+ int vlan 8
+  ip add 172.16.8.254 255.255.255.0
+  no shut
+ int vlan 16
+  ip add 192.168.16.254 255.255.255.0
+  no shut
+ int vlan 24
+  ip add 10.0.24.254 255.255.255.0
+  no shut
+ ip routing
+ router ospf 1
+  router-id 10.1.1.1
+  network 10.1.1.0 0.0.0.255 area 0
+  network 172.16.8.0 0.0.0.255 area 0
+  network 192.168.16.0 0.0.0.255 area 0
+  network 10.0.24.0 0.0.0.255 area 0
+  end
+
+
+@R1
+conf t
+ hostname R1
+ int lo8
+  ip add 8.8.8.8 255.255.255.255
+  no shut
+ int e0/0
+  ip add 10.1.1.254 255.255.255.0
+  no shut
+ int e0/1
+  ip add 10.1.2.254 255.255.255.0
+  no shut
+ router ospf 1
+  router-id 10.1.2.254
+  network 8.8.8.8 0.0.0.0 area 0
+  network 10.1.1.0 0.0.0.255 area 0
+  network 10.1.2.0 0.0.0.255 area 0
+  end
+
+
+@S3
+conf t
+ hostname S3
+ ip routing
+ ip route 0.0.0.0 0.0.0.0 10.1.2.254
+ int e0/0
+  ip add 10.1.2.1 255.255.255.0
+  no shut
+ ip domain lookup
+ ip host dns.google.com 8.8.8.8
+ ip dns server
+ end

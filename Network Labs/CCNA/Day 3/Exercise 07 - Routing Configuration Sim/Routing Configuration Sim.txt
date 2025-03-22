@@ -1,0 +1,230 @@
+Exercise 07
+Routing Configuration Sim
+
+For Accessing Devices
+
+ Device 	Port
+ P1 	 	2091
+ S1 	 	2092
+ R1 	 	2093
+ R3 	 	2095
+
+
+
+TASKS
+ IPv4 addressing is preconfigured. You are instructed to configure routes between devices so that P1 will be able to reach both S1 and Google.
+
+*NOTE: R2 and R4 are inaccessible.
+
+1. Configure a static host route on R1 destined for Google.
+    - The link between both R1 and R2's e0/1 interface must be primary.
+    - The link between both R1 and R2's e0/2 interface must be secondary.
+    - The distance metric for the secondary route must be 2 units higher than OSPF's default administrative distance.
+
+2. Configure a static route on R1 destined for S1.
+    - R1 must prefer R3 to reach S1 through the use of a host route.
+
+3. Configure a default and static route on R3 destined for Google, S1, and P1.
+    - Set a default route on R3, with R1 as the gateway.
+    - Configure a static route on R3 where packets destined for S1 must go through R4.
+
+4. Configure a default route on P1.
+
+
+SOLUTION
+
+ 1. Configure a static route on R1 destined for Google.
+    - The link between both R1 and R2's e0/1 interface must be primary.
+    - The link between both R1 and R2's e0/2 interface must be secondary.
+    - The distance metric for the secondary route must be 2 units higher than OSPF's default administrative distance.
+
+Since R2 is inaccessible and we do not know its ips on any of its ports we will not be able to specify a next-hop.
+In order to achieve this task, we have two options:
+    A. Use Cisco Discovery Protocol to identify the IP of the connected device.
+    b. Specify an interface rather than a next-hop.
+
+For option A, this can only be achieved if CDP is enabled on both devices (R1 & R2).
+
+@R1
+conf t
+ show cdp entry R2
+
+
+We find that R2's IPs on its e0/1 interface is 10.12.1.2 while on its e0/2 interface is 10.12.2.2.
+We then use this information as the next-hop for the static route.
+
+@R1
+conf t
+ ip route 142.251.220.238 255.255.255.255 10.12.1.2
+ ip route 142.251.220.238 255.255.255.255 10.12.2.2 112
+ !--use 112 as the administrative distance since OSPF has a default AD of 110, then increase it by 2 as specified on the instruction.
+
+
+For option B.
+
+@R1
+conf t
+ ip route 142.251.220.238 255.255.255.255 e0/1
+ ip route 142.251.220.238 255.255.255.255 e0/2 112
+ !--use 112 as the administrative distance since OSPF has a default AD of 110, then increase it by 2 as specified on the instruction.
+
+
+Either option is valid.
+
+
+2. Configure a static route on R1 destined for S1.
+    - R1 must prefer R3 to reach S1 through the use of a host route.
+
+Since we have access to R3, use the "show ip int brief" command on R3 to identify its IP address.
+
+@R1
+conf t
+ ip route 10.1.41.1 255.255.255.255 10.13.1.3
+
+*NOTE: R1 will still not be able to ping S1 because the next hop (R3) still doesn't know how to ping S1. complete the next task so that R1 can ping S1.
+
+3. Configure a default and static route on R3 destined for Google, S1, and P1.
+    - Set a default route on R3, with R1 as the gateway.
+
+@R3
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.13.1.1
+
+
+    - Configure a static route on R3 where, packets destined for S1 must go through R4.
+
+@R3
+conf t
+ ip route 10.1.41.1 255.255.255.255 e0/1
+
+
+
+4. Configure a default route on P1.
+
+@P1
+conf t
+ ip route 0.0.0.0 0.0.0.0 192.168.12.2
+
+###########
+
+PRECONFIGURATIONS
+
+
+Name: Exercise 07
+Desc: Routing Configuration Sim
+
+***
+
+Netmap:
+
+P1 91
+S1 92
+R1 93
+R2 94
+R3 95
+R4 96
+
+93:0/0 91:0/0
+93:0/1 94:0/1
+93:0/2 94:0/2
+93:0/3 95:0/3
+96:0/0 92:0/0
+96:0/1 95:0/1
+96:0/3 94:0/3
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+
+@P1
+conf t
+ hostname P1
+ int e0/0
+  ip add 192.168.12.1 255.255.255.252
+  no shut
+  end
+
+@S1
+conf t
+ hostname S1
+ int e0/0
+  ip add 10.1.41.1 255.255.255.252
+  no shut
+ ip routing
+ ip route 0.0.0.0 0.0.0.0 10.1.41.2
+
+@R1
+conf t
+ hostname R1
+ int e0/0
+  ip add 192.168.12.2 255.255.255.252
+  no shut
+ int e0/1
+  ip add 10.12.1.1 255.255.255.252
+  no shut
+ int e0/2
+  ip add 10.12.2.1 255.255.255.252
+  no shut
+ int e0/3
+  ip add 10.13.1.1 255.255.255.0
+  no shut
+  end
+
+@R2
+conf t
+ hostname R2
+ int lo0
+  ip add 142.251.220.238 255.255.255.255
+ int e0/1
+  ip add 10.12.1.2 255.255.255.252
+  no shut
+ int e0/2
+  ip add 10.12.2.2 255.255.255.252
+  no shut
+ int e0/3
+  ip add 10.24.1.2 255.255.255.0
+  no shut
+ ip routing
+ ip route 192.168.12.0 255.255.255.252 10.12.1.1
+ ip route 192.168.12.0 255.255.255.252 10.12.2.1 2
+ ip route 10.13.1.0 255.255.255.0 10.12.1.1
+ ip route 10.13.1.0 255.255.255.0 10.12.2.1 2
+ ip route 10.34.1.0 255.255.255.0 10.24.1.4
+ ip route 10.1.41.0 255.255.255.252 10.24.1.4
+ end
+
+@R3
+conf t
+ hostname R3
+ int e0/3
+  ip add 10.13.1.3 255.255.255.0
+  no shut
+ int e0/1
+  ip add 10.34.1.3 255.255.255.0
+  no shut
+  end
+
+@R4
+conf t
+ hostname R4
+ int e0/0
+  ip add 10.1.41.2 255.255.255.252
+  no shut
+ int e0/1
+  ip add 10.34.1.4 255.255.255.0
+  no shut
+ int e0/3
+  ip add 10.24.1.4 255.255.255.0
+  no shut
+ ip route 0.0.0.0 0.0.0.0 10.24.1.2
+ end

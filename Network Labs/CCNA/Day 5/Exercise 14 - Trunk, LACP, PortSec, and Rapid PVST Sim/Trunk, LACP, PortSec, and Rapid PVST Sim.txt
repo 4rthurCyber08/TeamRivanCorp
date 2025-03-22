@@ -1,0 +1,283 @@
+Exercise 14
+Trunk, LACP, PortSec, and Rapid PVST Sim
+
+For Accessing Devices
+
+ Device 	Port
+ A1 	 	2128
+ P1 	 	2129
+ A2 	 	2130
+ P2 	 	2131
+ A3 	 	2132
+ P3 	 	2133
+ S1 	 	2134
+
+
+TASKS
+
+Three switches must be configured for Layer 2 connectivity.
+The company requires only the designated VLANs to be configured on their respective switches and permitted across any links between switches for security purposes.
+
+Do not modify or delete VTP configurations.
+
+The network needs two user-defined VLANs configured:
+
+VLAN 60: ADMIN
+VLAN 140: SEC
+
+
+1. Configure the VLANs on the designated switches and assign them as access ports to the interfaces connected to the PCs.
+
+
+2. Configure etherchannel on the links between access switches.
+    - A1 & A2 must negotiate forming a LACP etherchannel.
+    - A3 must not negotiate but will form a LACP ethercnannel.
+    - Use the correct port-channel number as specified in the topology.
+
+
+3. Configure all port-channels as 802.1q trunks with only the required VLANs permitted.
+
+
+4. Configure security on the interface of the switches that are connected to the end devices.
+    - Set the maximum number of secure MAC address to two on each interface.
+    - Drop packets with unknown source address until the number of secure MAC addresses drops below the configured maximum value. Notification action is required on A1 & A2, while A3 is not required for any notification.
+    - Allow secure MAC addresses to be learned dynamically.
+
+
+5. Configure A1, A2, & A3 for RAPID PVST
+    - Set the interfaces of the switches that are connected to end devices with portfast.
+
+SOLUTION
+
+1. Configure the VLANs on the designated switches and assign them as access ports to the interfaces connected to the PCs.
+
+It is specified that the company requires only the designated VLANs to be configured on their respective switches.
+This means that for A1, we only need to configure VLAN ADMIN.
+
+On A2 & A3, we will need to configure both VLAN ADMIN & SEC. A2 needs to have both VLANs because it is needed to transmit packets for P1 and P3 to communicate.
+
+@A1
+conf t
+ vlan 60 
+  name ADMIN
+ int e0/0
+  switchport mode access
+  switchport access vlan 60
+
+@A2
+conf t
+ vlan 60 
+  name ADMIN
+ vlan 140
+  name SEC
+ int e0/0
+  switchport mode access
+  switchport access vlan 140
+
+@A3
+conf t
+  vlan 60 
+  name ADMIN
+ vlan 140
+  name SEC
+ int e0/0
+  switchport mode access
+  switchport access vlan 140
+ int e0/3
+  switchport mode access
+  switchport access vlan 60
+
+
+2. Configure etherchannel on the links between access switches.
+    - A1 & A2 must negotiate forming a LACP etherchannel.
+
+Remember to use the "show cdp neighbor" command to identify connected ports.
+
+@A1
+conf t
+ int range e0/1-2
+  channel-group 12 mode active
+  channel-protocol lacp
+
+@A2
+conf t
+ int range e0/1,e1/0
+  channel-group 12 mode active
+  channel-protocol lacp
+ int range e0/2-3
+  channel-group 23 mode active
+  channel-protocol lacp
+
+
+    - A3 must not negotiate but will form a LACP ethercnannel.
+
+@A3
+conf t
+ int range e0/1-2
+  channel-group 23 mode passive
+  channel-protocol lacp
+
+    - Use the correct port-channel number as specified in the topology.
+
+Verification: Access A2 and enter the "show etherchannel summary" command.
+Port-channel 12 & 23 must be tagged with SU. (S - Layer 2) (U - In use)
+
+
+3. Configure all port-channels as 802.1q trunks with only the required VLANs permitted.
+
+@A1, A2
+conf t
+ int po12
+  switchport trunk encapsulation dot1q
+  switchport mode trunk
+  switchport trunk allowed vlan 60
+
+@A2, A3
+conf t
+ int po23
+  switchport trunk encapsulation dot1q
+  switchport mode trunk
+  switchport trunk allowed vlan 60,140
+
+
+4. Configure security on the interface of the switches that are connected to the end devices.
+    - Set the maximum number of secure MAC address to two on each interface.
+    - Drop packets with unknown source address until the number of secure MAC addresses drops below the configured maximum value. Notification action is required on A1 & A2, while A3 is not required for any notification.
+    - Allow secure MAC addresses to be learned dynamically.
+
+@A1, A2
+conf t
+ int e0/0
+  switchport port-security
+  switchport port-security maximum 2
+  switchport port-security violation restrict
+  switchport port-security mac-address sticky
+
+@A3
+conf t
+ int e0/0
+  switchport port-security
+  switchport port-security maximum 2
+  switchport port-security violation protect
+  switchport port-security mac-address sticky
+ int e0/3
+  switchport port-security
+  switchport port-security maximum 2
+  switchport port-security violation protect
+  switchport port-security mac-address sticky
+
+
+5. Configure A1, A2, & A3 for RAPID PVST
+
+@A1, A2, A3
+conf t
+ spanning-tree mode rapid-pvst
+
+
+    - Set the interfaces of the switches that are connected to end devices with portfast.
+
+@A1, A2, A3
+conf t
+ int e0/0
+  spanning-tree portfast
+
+@A3
+conf t
+ int e0/3
+  spanning-tree portfast
+
+
+###########
+
+PRECONFIGURATIONS
+
+ Name: Exercise 14
+Desc: Trunk, LACP, PortSec, and Rapid PVST Sim
+
+***
+
+Netmap:
+
+A1 128
+P1 129
+A2 130
+P2 131
+A3 132
+P3 133
+S1 134
+
+128:0/0 129:0/0
+128:0/1 130:0/1
+128:0/2 130:1/0
+130:0/0 131:0/0
+130:0/2 132:0/1
+130:0/3 132:0/2
+132:0/0 134:0/0
+132:0/3 133:0/0
+
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+
+@A1, A2, A3
+conf t
+ vtp domain ccna
+ vtp version 2
+ vtp mode transparent
+ no ip http server
+ no ip http secure-server
+
+@A1
+conf t
+ hostname A1
+
+@A2
+conf t
+ hostname A2
+
+@A3
+conf t
+ hostname A3
+
+@P1
+conf t
+ hostname P1
+ int e0/0
+  ip add 10.0.60.1 255.255.255.0
+  no shut
+  end
+
+@P2
+conf t
+ hostname P2
+ int e0/0
+  ip add 10.0.140.2 255.255.255.0
+  no shut
+  end
+
+@P3
+conf t
+ hostname P3
+ int e0/0
+  ip add 10.0.60.3 255.255.255.0
+  no shut
+  end
+
+@S1
+conf t
+ hostname S1
+ int e0/0
+  ip add 10.0.140.11 255.255.255.0
+  no shut
+  end

@@ -1,0 +1,480 @@
+Exercise 05
+TShoot DHCP and IPv4 Assignment Sim
+
+
+For Accessing Devices
+
+ Device 	Port
+ P1 	 	2075
+ P2 	 	2076
+ P3 	 	2077
+ P4 	 	2078
+ D1 	 	2079
+ C1 	 	2080
+ C2 		2081
+ C3 		2082
+ C4 		2083
+ D2 		2084
+ R1 		2085
+
+
+TASKS
+
+Connectivity between swiches has been established and verified.
+End devices are unable to obtain IP addresses even though D1 and D2 are configured as DHCP servers.
+Resolve these issues so that end devices obtain the correct IP addresses specified on the topology.
+Ephones and cameras are innaccessible but are able to obtain IPs via DHCP.
+
+*NOTE:
+    - None of the ePhones are their own device. They are the sub-interface of PCs but they will still be able to obtain the correct IP address.
+    - End devices can automatically receive only one IP via DHCP as a limitation of this sim, which means if a wrong IP is received you will need to restart the lab.
+    - Do not remove and DHCP pool.
+
+The original instructions for DHCP are as follows:
+
+    *D1 Configs
+        For Vlan SEC
+
+    - Name Vlan 80 as SEC
+    - Assign the network 10.12.80.0/28 to Vlan SEC
+    - Exclude the first 5 IPs
+    - Apply the first valid IP on D1
+    - Apply the last valid IP on D2
+    - Gateway must be D1
+
+    For Vlan VOI
+
+    - Name Vlan 100 as VOI
+    - Assign the network 10.12.100.96/27 to Vlan VOI
+    - Exclude the first 8 IPs
+    - Apply the first valid IP on D1
+    - Apply the last valid IP on D2
+    - Gateway must be D2.
+
+    *D2 Configs
+    For Vlan HR
+    - Name Vlan 10 as HR
+    - Assign the network 10.12.10.64/29 to Vlan HR
+    - Exclude the first 2 IPs
+    - Apply the first valid IP on D1
+    - Apply the last valid IP on D2
+    - Gateway must be D1
+
+    For Vlan ADM
+
+    - Name Vlan 5 as ADM
+    - Assign the network 10.12.5.0/24 to Vlan ADM
+    - Exclude the first 100 IPs
+    - Apply the first valid IP on D1
+    - Apply the last valid IP on D2
+    - Gateway must be D2
+
+To Verify if everything is working properly, use the 'show ip dhcp binding' command on both D1 and D2.
+
+On D1
+4 IPs must be leased for 10.12.100.96/27 network
+4 IPs must be leased for 10.12.80.0/28 network
+
+On D2
+2 IPs must be leased for 10.12.5.0/24 network
+2 IPs must be leased for 10.12.10.64/29 network
+
+
+Tips:
+    - Verify if the configuration of DHCP pool is correct.
+    - Verify if end devices are on the correct vlan.
+    - Verify if ports are up.
+    - Verify if VLANs exist.
+    - Verify if the exclusion of IP addresses are correct.
+
+
+SOLUTION
+
+ Use the 'show run | section dhcp' command to investigate the current configurations for DHCP on both switches.
+
+@D1, D2
+sh run | s dhcp
+
+
+There's 2 errors that we will be able to see. One is obvious while the other is difficult to notice.
+
+1st error - DHCP pool hrpool does not have a specified network.
+
+@D2
+conf t
+ ip dhcp pool hrpool
+  network 10.12.10.64 255.255.255.248
+  end
+sh run | s dhcp
+
+
+    The correct network statement must exist on hrpool.
+
+2nd error - The DHCP configuration for VLAN 80 is excluding too much IP addresses
+
+    The current configuration on D1 -
+
+ip dhcp excluded-address 10.12.80.1 10.12.80.50
+
+    - is excluding 50 ip addresses for its network but the network of VLAN 80 (10.12.80.0/28) has an i of 16.
+    Since its on the 4th octet we can say that it holds 16 ip addresses.
+
+    The exclusion statement is reserving more IPs than the network could provide. Solve the issue by remove the exclusion statement first then apply the correct config.
+
+@D1
+conf t
+ no ip dhcp excluded-address 10.12.80.1 10.12.80.50
+ ip dhcp excluded-address 10.12.80.1 10.12.80.5
+
+
+
+Troubleshoot Layer 1 - Physical Layer
+
+    Use the 'show cdp neighbor' command on both D1 and D2 to identify if they are connected to the end devices.
+    On the table, all the PCs and Cameras must be present (Except the ePhones).
+
+@D1, D2
+show cdp neigh
+
+    We discover that they are all present and connected.
+
+
+Troubleshoot Layer 2 - Data Link layer
+
+    Use the show vlan brief command on both D1 and D2 to identify if the VLANs exist and that end devices are connected to the correct VLAN.
+
+@D1, D2
+show vlan brief
+
+
+    We discover that all vlans exist but some ports are not in the correct vlan, specifically for VOI Vlan.
+
+    Verify this error further by using the 'show run | s int' command
+
+    On D1, the ports connected to the ePhones (e1/1 & e1/3) are set with the wrong voice vlan.
+    Solve the issue by placing it on vlan 100
+
+@D1
+conf t
+ int range e1/1,e1/3
+  sw voice vlan 100
+
+
+    While on D2, we see that there is no voice vlan specified on interfaces e1/1 & e1/3.
+
+@D2
+conf t
+ int range e1/1,e1/3
+  sw voice vlan 100
+
+
+    Verification:
+    Wait for a while, then use 'show ip dhcp binding' to check if 4 IPs for VLAN VOI have been leased on D1.
+
+
+Troubleshoot Layer 3 - Network Layer
+
+    Use the 'show ip interface brief' command to check IP address, SVIs and port states.
+
+@D1, D2
+show ip int br
+
+    We discover that IP addressing is correct but the SVI for vlan 5 on D2 is down. Issue a 'no shut' command to the SVI.
+
+@D2
+conf t
+ int vlan 5
+  no shut
+  end
+
+    Wait for a few seconds, then verify using show ip interface brief command again.
+
+    Verification:
+    Once VLAN 5 is up, use show ip dhcp binding to check if 2 IPPs for VLAN HR have been leased on D2.
+
+ 
+
+###########
+
+PRECONFIGURATIONS
+
+Name: Exercise 05
+Desc: TShoot DHCP and IPv4 Assignment Sim
+
+***
+
+Netmap:
+
+P1    2075
+P2    2076
+P3    2077
+P4    2078
+D1    2079
+C1    2080
+C2    2081
+C3    2082
+C4    2083
+D2    2084
+R1    2085
+
+
+79:0/0 85:0/1
+79:0/1 84:0/1
+79:0/2 84:0/2
+79:0/3 84:0/3
+79:1/0 80:0/0
+79:1/1 75:0/0
+79:1/2 81:0/0
+79:1/3 76:0/0
+84:0/0 85:0/2
+84:1/0 83:0/0
+84:1/1 78:0/0
+84:1/2 82:0/0
+84:1/3 77:0/0
+
+
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+ ip host R1.ethernet.01 10.1.1.2
+ ip host R1.ethernet.02 10.1.2.2
+ ip host S1.main.server 10.1.1.5
+ ip host S2.backup.server 10.1.2.5
+  end
+
+@R1
+conf t
+ hostname R1
+ int lo1
+  ip add 10.1.1.5 255.255.255.255
+ int lo2
+  ip add 10.1.2.5 255.255.255.255
+ int e0/1
+  ip add 10.1.1.2 255.255.255.252
+  ip ospf network point-to-point
+  no shut
+ int e0/2
+  ip add 10.1.2.2 255.255.255.252
+  ip ospf network point-to-point
+  no shut
+ router ospf 1
+  router-id 10.1.2.2
+  network 10.1.1.5 0.0.0.0 area 0
+  network 10.1.2.5 0.0.0.0 area 0
+  network 10.1.1.0 0.0.0.3 area 0
+  network 10.1.2.0 0.0.0.3 area 0
+  end
+
+@D1
+conf t
+ hostname D1
+ int range e0/1-3
+  sw tr encaps dot
+  sw mo tr
+  sw tr allowed vlan all
+ vtp domain ccna
+ vtp mode server
+ vtp version 2
+ vlan 5
+  name ADM
+ vlan 10
+  name HR
+ vlan 80
+  name SEC
+ vlan 100
+  name VOI
+ int vlan 5
+  ip add 10.12.5.1 255.255.255.0
+  no shut
+ int vlan 10
+  ip add 10.12.10.65 255.255.255.248
+  no shut
+ int vlan 80
+  ip add 10.12.80.1 255.255.255.240
+  no shut
+ int vlan 100
+  ip add 10.12.100.97 255.255.255.224
+  no shut
+ int e0/0
+  no sw
+  ip add 10.1.1.1 255.255.255.252
+  ip ospf network point-to-point
+  no shut
+ int range e1/0,e1/2
+  sw mo ac
+  sw ac vlan 80
+ int range e1/1,e1/3
+  sw mo ac
+  sw ac vlan 10
+  !---
+  sw vo vlan 1
+ router ospf 1
+  router-id 10.10.10.10
+  network 10.1.1.0 0.0.0.3 area 0
+  network 10.12.5.0 0.0.0.255 area 0
+  network 10.12.10.64 0.0.0.7 area 0
+  network 10.12.80.0 0.0.0.15 area 0
+  network 10.12.100.96 0.0.0.31 area 0
+  !
+  !
+  !---
+  ip dhcp excluded-address 10.12.80.1 10.12.80.50
+  ip dhcp pool SECPool
+   network 10.12.80.0 255.255.255.240
+   default-router 10.12.80.1
+  ip dhcp excluded-address 10.12.100.97 10.12.100.104
+  ip dhcp pool VOIPool
+   network 10.12.100.96 255.255.255.224
+   default-router 10.12.100.126
+   end
+
+@D2
+conf t
+ hostname D2
+ int range e0/1-3
+  sw tr encaps dot
+  sw mo tr
+  sw tr allowed vlan all
+ vtp domain ccna
+ vtp mode server
+ vtp version 2
+ vlan 5
+  name ADM
+ vlan 10
+  name HR
+ vlan 80
+  name SEC
+ vlan 100
+  name VOI
+ int vlan 5
+  ip add 10.12.5.254 255.255.255.0
+  !
+  !---
+  shut
+ int vlan 10
+  ip add 10.12.10.70 255.255.255.248
+  no shut
+ int vlan 80
+  ip add 10.12.80.14 255.255.255.240
+  no shut
+ int vlan 100
+  ip add 10.12.100.126 255.255.255.224
+  no shut
+ int e0/0
+  no sw
+  ip add 10.1.2.1 255.255.255.252
+  ip ospf network point-to-point
+  no shut
+ int range e1/0,e1/2
+  sw mo ac
+  sw ac vlan 80
+ int range e1/1,e1/3
+  sw mo ac
+  sw ac vlan 5
+  !---
+  !sw vo vlan 100
+ router ospf 1
+  router-id 10.20.20.20
+  network 10.1.2.0 0.0.0.3 area 0
+  network 10.12.5.0 0.0.0.255 area 0
+  network 10.12.10.64 0.0.0.7 area 0
+  network 10.12.80.0 0.0.0.15 area 0
+  network 10.12.100.96 0.0.0.31 area 0
+  !
+  !
+  !
+  ip dhcp excluded-address 10.12.10.65 10.12.10.66
+  ip dhcp pool hrpool
+   !---
+   default-router 10.12.10.65
+  ip dhcp excluded-address 10.12.5.1 10.12.5.100
+  ip dhcp pool admpool
+   network 10.12.5.0 255.255.255.0
+   default-router 10.12.5.254
+  end
+
+@P1
+conf t
+ hostname P1
+ int e0/0
+  no shut
+  ip add dhcp
+ int e0/0.100
+  encaps dot 100
+  no shut
+  ip add dhcp
+
+@P2
+conf t
+ hostname P2
+ int e0/0
+  no shut
+  ip add dhcp
+ int e0/0.100
+  encaps dot 100
+  no shut
+  ip add dhcp
+
+@P3
+conf t
+ hostname P3
+ int e0/0
+  no shut
+  ip add dhcp
+ int e0/0.100
+  encaps dot 100
+  no shut
+  ip add dhcp
+
+@P4
+conf t
+ hostname P4
+ int e0/0
+  no shut
+  ip add dhcp
+ int e0/0.100
+  encaps dot 100
+  no shut
+  ip add dhcp
+
+@C1
+conf t
+ hostname C1
+ int e0/0
+  no shut
+  ip add dhcp
+  end
+
+@C2
+conf t
+ hostname C2
+ int e0/0
+  no shut
+  ip add dhcp
+  end
+
+@C3
+conf t
+ hostname C3
+ int e0/0
+  no shut
+  ip add dhcp
+  end
+
+@C4
+conf t
+ hostname C4
+ int e0/0
+  no shut
+  ip add dhcp
+  end

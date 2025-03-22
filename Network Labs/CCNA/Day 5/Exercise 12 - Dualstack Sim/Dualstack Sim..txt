@@ -1,0 +1,350 @@
+Exercise 12
+Dualstack Sim
+
+For Accessing Devices
+
+ Device 	Port
+ R1 	 	2118
+ R2 	 	2119
+ R3 	 	2120
+
+
+TASKS
+
+Configure IPv4 and IPv6 connectivity between routers.
+
+1. Using the IPv6 address space 2001:db8:0:4000::/64, find the first four subnets to be assigned as the first four offices.
+    For the First Office,
+        - Assign the last valid IPv6 address on R1's loopback 1
+
+*NOTE: Do not use a reserved anycast address.
+
+    For the Second Office,
+        - Assign the first valid IPv6 address on R2's loopback 2
+
+    For the Third Office,
+        - Assign the third valid IPv6 address on R3's loopback 3
+
+    The Fourth Office will be Office A.
+        - Assign an IPv6 GUA using a unique 64-bit interface identifier on R1's e0/0 interface.
+        - Assign an IPv6 GUA using a unique 64-bit interface identifier on R2's e0/1 interface.
+
+
+2. Using the IPv6 network 2001:db8:23::/126,
+    - Assign the first valid IPv6 address on R3's e0/0 interface.
+    - Assign the last valid IPv6 address on R2's e0/2 interface.
+
+
+3. Using the IPv4 address space 10.12.5.128/26
+    - Assign the first valid on R1.
+    - Assign the last valid on R2.
+
+
+4. Using the IPv4 address space 10.12.5.192/26
+    - Assign the first valid on R3.
+    - Assign the last valid on R2.
+
+
+5. IPv4 default routing.
+    - Configure a R2 as the default gateway for R1 & R3.
+
+
+6. IPv6 static and default routing.
+    - Configure R2 as the default gateway for R1 & R3
+    - Configure an IPv6 static route on R2 destined for the loopback 1 IP on R1.
+    - Configure an IPv6 static route on R2 destined for the loopback 3 IP on R3.
+
+
+SOLUTION
+
+1. Using the IPv6 address space 2001:db8:0:4000::/64, find the first four subnets to be assigned as the first four offices.
+
+First, we need to figure out the location of /64 in the ipv6 address 2001:db8:0:4000::/64
+
+We know that each hexadecimal is 4 bits, which means one hextet is 16 bits in total.
+
+    /16       /32      /48     /64    /80
+    2001 : 0db8 : 0000 : 4000 : 0000 : 0000 : 0000 : 0000  /64
+
+    /64 is located on the 4th hextet = :4000:
+
+    We can find the exact bit by breaking down the hextet into bits.
+
+                4th Hextet
+    :    4        0        0        0        :            = hex
+    :    0100    0000    0000    0000    :    = binary
+
+The last bit from the previous hextet is /48 which means in the fourth hextet we start counting from 49.
+        49        53        57        61      64
+    :    0100    0000    0000    000 | 0        :
+
+We find that the last bit on the 4th hextet is the /64. Now we have to determine the i or increment.
+
+        8421    8421    8421    842   1            = increment
+    :    0100    0000    0001    000 | 0        :
+
+We find out that the increment is 1, therefore we can find the offices:
+
+    The first office will always start from zero.
+        2001:db8:0:4000::/64
+
+    Second office.
+        2001:db8:0:4001::/64
+
+    Third office.
+        2001:db8:0:4002::/64
+
+    Fourth office.
+        2001:db8:0:4003::/64
+
+
+    For the First Office,
+        - Assign the last valid IPv6 address on R1's loopback 1.
+
+A reserved anycast address is the last 128 IPs of any /64 subnet. All we have to do is identify the last 128 IPs of the First Office.
+
+The last IP is 2001:db8:0:4000:ffff:ffff:ffff:ffff/64
+
+We'll need to count in hex:
+
+      10 hex = 16 deci
+      20 hex = 32 deci
+      30 hex = 48 deci
+      40 hex = 64 deci
+      50 hex = 80 deci
+      60 hex = 96 deci
+      70 hex = 112 deci
+      80 hex = 128 deci
+
+Now the IPv6 range for the last 128 IPs is:
+
+     2001:db8:0:4000:ffff:ffff:ffff:ff80/64
+        to
+     2001:db8:0:4000:ffff:ffff:ffff:ffff/64
+
+Now subtract 2001:db8:0:4000:ffff:ffff:ffff:ff80/64 by 1 to find the last valid non reserved anycast address: 2001:db8:0:4000:ffff:ffff:ffff:ff7f/64
+
+@R1
+conf t
+ ipv6 unicast-routing
+ int lo1
+  ipv6 add 2001:db8:0:4000:ffff:ffff:ffff:ff7f/64
+
+    For the Second Office,
+        - Assign the first valid IPv6 address on R2's loopback 2
+
+@R2
+conf t
+ ipv6 unicast-routing
+ int lo2
+  ipv6 add 2001:db8:0:4001::1/64
+
+
+    For the Third Office,
+        - Assign the third valid IPv6 address on R3's loopback 3
+
+@R3
+conf t
+ ipv6 unicast-routing
+ int lo3
+  ipv6 add 2001:db8:0:4002::3/64
+
+
+    The Fourth Office will be Office A.
+        - Assign an IPv6 GUA using a unique 64-bit interface identifier on R1's e0/0 interface.
+
+@R1
+conf t
+ int e0/0
+  no shut
+  ipv6 add 2001:db8:0:4003::/64 eui-64
+
+
+        - Assign an IPv6 GUA using a unique 64-bit interface identifier on R2's e0/1 interface.
+
+@R2
+conf t
+ int e0/1
+  no shut
+  ipv6 add 2001:db8:0:4003::/64 eui-64
+
+
+2. Using the IPv6 network 2001:db8:23::/126,
+    - Assign the first valid IPv6 address on R3's e0/0 interface.
+
+First, determine the i or increment of /126
+
+    /16    /32    /48    /64    /80    /96    /112   /128
+    2001 : 0db8 : 0000 : 0023 : 0000 : 0000 : 0000 : 0000 /126
+
+/126 is on the last hextet
+        /116    /120    /124    /128
+        0        0        0        0
+    :    0000    0000    0000    0000    :
+
+                                 /126
+    :    0000    0000    0000    00 | 00        :
+
+
+        8421    8421    8421    84   21
+    :    0000    0000    0000    00 | 00        :
+
+/126 has an increment of 4.
+
+Therefore the first valid IPv6 address is,
+    2001:db8:23::1 /126
+
+While the last valid IPv6 address is,
+    2001:db8:23::3 /126
+
+@R3
+conf t
+ int e0/0
+  ipv6 add 2001:db8:23::1/126
+  no shut
+
+
+    - Assign the last valid IPv6 address on R2's e0/2 interface.
+
+@R2
+conf t
+ int e0/2
+  ipv6 add 2001:db8:23::3/126
+  no shut
+
+
+
+3. Using the IPv4 address space 10.12.5.128/26
+
+Network =                 10.12.5.128/26 (4th, 64i)
+1st Valid =                 10.12.5.129
+last Valid =                10.12.5.190
+last IP/Broadcast =    10.12.5.191
+
+Not Network =          10.12.5.192/26
+
+
+    - Assign the first valid on R1's e0/0 interface.
+
+@R1
+conf t
+ int e0/0
+  ip add 10.12.5.129 255.255.255.192
+  no shut
+
+
+    - Assign the last valid on R2's e0/1 interface.
+
+@R2
+conf t
+ int e0/1
+  ip add 10.12.5.190 255.255.255.192
+  no shut
+
+
+4. Using the IPv4 address space 10.12.5.192/26
+
+Network =                 10.12.5.192/26 (4th, 64i)
+1st Valid =                 10.12.5.193
+last Valid =                10.12.5.254
+last IP/Broadcast =    10.12.5.255
+
+Not Network =           10.12.6.0/26
+
+    - Assign the first valid on R3's e0/0 interface.
+
+@R3
+conf t
+ int e0/0
+  ip add 10.12.5.193 255.255.255.192
+  no shut
+
+
+    - Assign the last valid on R2's e0/2 interface.
+
+@R2
+conf t
+ int e0/2
+  ip add 10.12.5.254 255.255.255.192
+  no shut
+
+
+5. IPv4 default routing.
+    - Configure a R2 as the default gateway for R1 & R3.
+
+@R1
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.12.5.190
+
+@R3
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.12.5.254
+
+
+6. IPv6 static and default routing.
+    - Configure R2 as the default gateway for R1 & R3
+    - Configure an IPv6 static route on R2 destined for the loopback 1 IP on R1.
+    - Configure an IPv6 static route on R2 destined for the loopback 3 IP on R3.
+
+We use an eui-64 on R2, therefore you must use the "show ipv6 int brief" command and check the IP of R2 on its e0/1 interface, then use that as the next hop.
+
+@R1
+conf t
+ ipv6 route ::/0 [R2's IPv6 address on its e0/1]
+
+@R3
+conf t
+ ipv6 route ::/0 2001:db8:23:3
+
+@R2
+conf t
+ ipv6 route 2001:db8:0:4000:ffff:ffff:ffff:ff7f/64 [R1's e0/0 IP]
+ ipv6 route 2001:db8:0:4002::3/64 2001:db8:23::1
+
+
+###########
+
+PRECONFIGURATIONS
+
+ Name: Exercise 12
+Desc: Dualstack Sim
+
+***
+
+Netmap:
+
+R1    118
+R2    119
+R3    120
+
+119:0/1 118:0/0
+119:0/2 120:0/0
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+
+@R1
+conf t
+ hostname R1
+ end
+
+@R2
+conf t
+ hostname R2
+ end
+
+@R3
+conf t
+ hostname R3
+ end

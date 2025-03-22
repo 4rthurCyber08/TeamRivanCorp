@@ -1,0 +1,388 @@
+Exercise 03
+DHCP and IPv4 Deployment Sim
+
+
+For Accessing Devices
+
+ Device 	Port
+ P1 	 	2058
+ P2 	 	2059
+ P3 	 	2060
+ P4 	 	2061
+ S1 		2062
+ S2 		2063
+ A1 		2064
+ A2 		2065
+ D1 		2066
+ R1 		2067
+ R2 		2068
+
+
+TASKS
+Cables are in place and connectivity between switches have been established.
+
+You are instructed to design and implement a network for VLANs ADM and FIN. Assign end devices to their specified VLANs according to the topology.  
+    Using the IP address space 10.0.0.0/8, design and implement a network for a VLAN called ADM, containing 312 users with the following specifications.
+
+        - Assign the first valid IP to D1's ADM VLAN.
+        - Assign the second valid IP to S2's e0/0 interface
+        - Assign the last valid IP to R1's e0/0 interface.
+        - Configure a DHCP pool for ADM VLAN named adminPool
+        - You must exclude the first and last 30 IPs.
+        - The gateway for VLAN ADM must be R1.
+        - The DNS server must be S2.
+
+    Using the IP address space 192.168.0.0/24, design and implement a network for a VLAN called FIN, containing 820 users with the following specifications.
+
+        - Assign the first valid IP to D1's FIN VLAN.
+        - Assign the second valid IP to S1's e0/0 interface
+        - Assign the last valid IP to R2's e0/0 interface.
+        - Configure a DHCP pool for FIN VLAN named financePool
+        - You must exclude the first 10 and last 5 IPs.
+        - The gateway for VLAN FIN must be R2.
+        - The DNS server must be S1.
+
+    Assign end devices to their specified VLANs according to the topology. R1 must belong to VLAN ADM and R2 must belong to VLAN FIN.
+
+        Add an IP to their connected interface via DHCP.
+
+
+SOLUTION
+
+1. Using the IP address space 10.0.0.0/8, design and implement a network for a VLAN called ADM, containing 312 users.
+
+Given: 10.0.0.0 /8, 312 users, VLAN ADM
+
+Using CSI
+
+Convert: 312 users = 9 bits
+Subtract: /32 - 9 bits = /23 new slash, (3rd Octet, 2i)
+Ipasok si 2i sa 3rd Octet
+    10.0.2.0 /23 = Network of VLAN ADM
+
+    Network:                  	10.0.2.0 255.255.254.0
+    1st Valid:                  10.0.2.1
+    Last Valid:					10.0.3.254
+    Last IP/Broadcast:    		10.0.3.255
+
+    NOT ADM:              		10.0.4.0
+
+
+Since we don't know the VLAN number of VLAN ADM, we will use the "show vlan brief command".
+
+@D1
+ show vlan brief
+
+
+We find out that VLAN ADM is VLAN number 28.
+
+@D1
+conf t
+ !-- Assign the first valid IP to D1's ADM VLAN.
+ !
+ int vlan 28
+  ip add 10.0.2.1 255.255.254.0
+  no shut
+  end
+
+@S2
+ conf t
+ !-- Assign the second valid IP to S2's e0/0 interface
+ !
+ int e0/0
+  ip add 10.0.2.2 255.255.254.0
+  no shut
+  end
+
+@R1
+conf t
+ !-- Assign the last valid IP to R1's e0/0 interface.
+ !
+ int e0/0
+  ip add 10.0.3.254 255.255.254.0
+  no shut
+  end
+
+@D1
+conf t
+ !-- You must exclude the first and last 30 IPs.
+ !
+ ip dhcp excluded-address 10.0.2.1 10.0.2.30
+ ip dhcp excluded-address 10.0.3.226 10.0.3.255
+ !
+ !-- Configure a DHCP pool for ADM VLAN named adminPool
+ !
+ ip dhcp pool adminPool
+  network 10.0.2.0 255.255.254.0
+  !
+  !-- The gateway for VLAN ADM must be R1
+  !
+  default-router 10.0.3.254
+  !
+  !-- The dns server must be S2.
+  dns-server 10.0.2.2
+  end
+
+
+2. Using the IP address space 192.168.0.0/24, design and implement a network for a VLAN called FIN, containing 820 users with the following specifications.
+
+Given: 192.168.0.0 /24, 820 users, VLAN FIN
+
+Using CSI
+
+Convert: 820 users = 10 bits
+Subtract: /32 - 10 bits = /22 new slash, (3rd Octet, 4i)
+Ipasok si 4i sa 3rd Octet
+    192.168.4.0 /22 = Network of VLAN FIN
+
+    Network:                   		192.168.4.0 255.255.252.0
+    1st Valid:                   	192.168.4.1
+    Last Valid:                 	192.168.7.254
+    Last IP/Broadcast:    			192.168.7.255
+
+    NOT ADM:              			192.168.8.0
+
+
+Since we don't know the VLAN number of VLAN FIN, we will use the "show vlan brief command".
+
+@D1
+conf t
+ show vlan brief
+
+
+We find out that VLAN FIN is VLAN number 67.
+
+@D1
+conf t
+ !-- Assign the first valid IP to D1's FIN VLAN.
+ !
+ int vlan 67
+  ip add 192.168.4.1 255.255.252.0
+  no shut
+  end
+
+@S1
+ conf t
+ !-- Assign the second valid IP to S1's e0/0 interface
+ !
+ int e0/0
+  ip add 192.168.4.2 255.255.252.0
+  no shut
+  end
+
+@R2
+conf t
+ !-- Assign the last valid IP to R2's e0/0 interface.
+ !
+ int e0/0
+  ip add 192.168.7.254 255.255.252.0
+  no shut
+  end
+
+@D1
+conf t
+ !-- You must exclude the first 10 and last 5 IPs.
+ !
+ ip dhcp excluded-address 192.168.4.1 192.168.4.10
+ ip dhcp excluded-address 192.168.7.251 192.168.7.255
+ !
+ !-- Configure a DHCP pool for FIN VLAN named financePool
+ !
+ ip dhcp pool financePool
+  network 192.168.4.0 255.255.252.0
+  !
+  !-- The gateway for VLAN FIN must be R2.
+  !
+  default-router 192.168.7.254
+  !
+  !-- The dns server must be S1.
+  dns-server 192.168.4.2
+  end
+
+
+
+3. Assign end devices to their specified VLANs according to the topology. R1 must belong to VLAN ADM and R2 must belong to VLAN FIN.
+
+@D1
+conf t
+ int range e0/1,e1/2
+  switchport mode access
+  switchport access vlan 67
+ int range e0/2,e1/1
+  switchport mode access
+  switchport access vlan 28
+  end
+
+@A1
+conf t
+ int e0/1
+  switchport mode access
+  switchport access vlan 67
+ int e0/2
+  switchport mode access
+  switchport access vlan 28
+  end
+
+@A2
+conf t
+ int e0/1
+  switchport mode access
+  switchport access vlan 67
+ int e0/2
+  switchport mode access
+  switchport access vlan 28
+  end
+
+@P1, P2, P3, P4
+conf t
+ int e0/0
+  no shut
+  ip add dhcp
+  end
+
+Verification:
+
+'show ip int brief'           on end devices.
+'show vlan brief'             on A1 & A2.
+'show ip dhcp binding'   on D1.
+
+End devices must receive an IP based on their VLAN.
+
+Use 'show ip route' on end devices to determine if their default gateway is the correct router.
+
+###########
+
+PRECONFIGURATIONS
+
+Name: Exercise 03
+Desc: DHCP and IPv4 Deployment Sim
+
+***
+
+Netmap:
+
+P1    58
+P2    59
+P3    60
+P4    61
+S1    62
+S2    63
+A1    64
+A2    65
+D1    66
+R1    67
+R2    68
+
+64:0/0 66:0/0
+64:0/1 58:0/0
+64:0/2 59:0/0
+
+65:0/0 66:1/0
+65:0/1 61:0/0
+65:0/2 60:0/0
+
+66:0/1 62:0/0
+66:0/2 63:0/0
+66:1/1 67:0/0
+66:1/2 68:0/0
+
+67:0/1 68:0/1
+
+***
+
+Preconfigs
+
+@alldevices
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+  end
+
+@P1
+conf t
+ hostname P1
+ end
+
+@P2
+conf t
+ hostname P2
+ end
+
+@P3
+conf t
+ hostname P3
+ end
+
+@P4
+conf t
+ hostname P4
+ end
+
+@S1
+conf t
+ hostname S1
+ end
+
+@S2
+conf t
+ hostname S2
+ end
+
+@A1
+conf t
+ hostname A1
+ int e0/0
+  sw tr encapsulation dot1q
+  sw mo tr
+  sw tr allowed vlan 28,67
+ vtp domain ccna
+ vtp version 2
+ vtp mode client
+ end
+
+@A2
+conf t
+ hostname A2
+ int e0/0
+  sw tr encapsulation dot1q
+  sw mo tr
+  sw tr allowed vlan 28,67
+ vtp domain ccna
+ vtp version 2
+ vtp mode client
+ end
+
+@D1
+conf t
+ hostname D1
+ int range e0/0,e1/0
+  sw tr encapsulation dot1q
+  sw mo tr
+  sw tr allowed vlan 28,67
+  no shut
+ vtp domain ccna
+ vtp version 2
+ vtp mode server
+ vlan 28
+  name ADM
+ vlan 67
+  name FIN
+  end
+
+@R1
+conf t
+ hostname R1
+ int e0/1
+  ip add 142.251.220.237 255.255.255.0
+  no shut
+  end
+
+@R2
+conf t
+ hostname R2
+ int e0/1
+  ip add 142.251.220.236 255.255.255.0
+  no shut
+  end
