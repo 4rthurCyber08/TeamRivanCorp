@@ -1,0 +1,11 @@
+enable
+configure terminal
+ip http server
+ip http secure-server
+
+ip http authentication local  !//To use local account as authentication for Web GUI
+username cisco privilege 15 secret cisco
+line vty 0 20
+ login local
+ transport input all
+show ip http server status
