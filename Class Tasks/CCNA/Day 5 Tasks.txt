@@ -1,0 +1,49 @@
+
+CIDR	Dotted Deci	  Rivan Format   Wildcard
+
+/17     ___.___.___.___   (Octet, i)     ___.___.___.___
+/?      255.255.128.0     (Octet, i)     ___.___.___.___
+/?      ___.___.___.___   (2nd, 4i)      ___.___.___.___
+
+
+***************
+
+R1 has the following IP addresses:
+	Loopback 1: 	11.11.11.11 	/32
+	Loopback 2:	102.102.102.102 /32
+	Gig0/0/1:	10.144.209.6 	/12
+	Gig0/0/2:	172.16.136.205 	/19
+	Gig0/0/3:	192.168.11.113 	/30
+
+Configure Single area OSPF on R1 with the ff settings:
+	-Process ID must be 5
+	-Router ID must be its Loopback 2 IP
+	-Set its Gig0/0/1 interface with the lowest priority
+	-Set its Gig0/0/3 interface as point-to-point
+
+***************
+
+ACL Configuration
+
+1. Configure a firewall policy named Day5 to open the following:
+	www.web1.com has ping, chargen, dns
+	www.web2.com has http, https, telnet
+	www.web3.com has ssh, ntp
+
+	*Traffic matches should be logged
+
+***************
+
+Compress IPv6 Addresses
+
+1. 2001:0db8:4056:bac0:b00b:000f:00d2:0000: /64
+
+2. fe80:00ba:0000:0000:0000:0ba8:0000:0000: /64
+
+3. ff02:0000:0000:0000:0000:000a:000b:0000: /64
+
+***************
+
+IPv6 Subnetting
+
+Using the IPv6 address 2001:db81::/64
