@@ -1,0 +1,39 @@
+Eve installation:
+
+1. On VMWare, Select File > New Virtual Machine
+	> Configuration: Typical
+	
+	> Install OS Later
+	
+	> Guest OS & Version: Other, Other
+	
+	> VM Name
+	
+	> Disk Size: 200GB
+	  Split to multiple files
+	
+	Custom Hardware
+		Memory: 		32
+		Processors: 	8
+		IDE: 			Eve.iso
+		Net Adapter: 	NAT
+
+2. Turn on the VM. EVE Setup
+
+3. Add images to EVE.
+	Open an SFTP Program (WinSCP or Filezilla)
+	
+	Images go into their own separate folder on: /opt/unetlab/addons/qemu/
+		*NOTE: Check official EVE site for proper Folder and Filenames. (Required)
+	
+	Reference: 
+		Image Namings: https://www.eve-ng.net/index.php/documentation/qemu-image-namings/
+		
+		Image Howtos: https://www.eve-ng.net/index.php/documentation/howtos/
+	
+		For Cisco IOL (IOS): https://www.eve-ng.net/index.php/documentation/howtos/howto-add-cisco-iol-ios-on-linux/
+			- From CML: https://www.eve-ng.net/index.php/documentation/howtos/howto-add-cisco-vios-from-virl/
+		
+		For Nexus 9K (or 7K): https://www.eve-ng.net/index.php/documentation/howtos/howto-add-cisco-nexus-9000v-switch/
+	
+		For SDWAN: https://www.eve-ng.net/index.php/documentation/howtos/howto-add-cisco-viptela-images-set/
