@@ -1,0 +1,1504 @@
+Day 1 Sim
+VLAN, DHCP, Switchport, IPv4 assignment, Static & Default Routing
+
+For Accessing Devices
+
+ Device		Port
+ PC			2029
+ CoreTAAS	2030
+ CoreBABA	2031
+ WLC		2032
+ AP			2033
+ CUCM 		2034
+ eP1 		2035
+ eP2 		2036
+ C8 		2037
+ C6 		2038
+ EDGE 		2039
+
+
+PRECAUTION
+
+Before starting this sim, if you are going to use your Day_1.txt file with all the script filled in with your monitor number, it is a good idea to create a copy as a backup.
+You will need to make changes to your script because of the limitations of this sim. (Please refer to the LIMITATIONS section.)
+
+
+SCENARIO
+
+    You are seated on monitor 81 and are instructed to configure Day 1 setup.
+        Cabling is completed.
+        The student seated at monitor 92 has finished configurations and can ping other student's PC other than your own.
+
+
+GOAL
+
+    Your PC must be able to ping PC92
+    IP addresses on the topology should be assigned to the following end device via DHCP configured on CoreBABA:
+        Camera 6 (C6) = 10.81.50.6
+        Camera 8 (C8) = 10.81.50.8
+        ePhone 1 (eP1) = 10.81.100.101
+        ePhone 2 (eP2) = 10.81.100.102
+
+
+LIMITATIONS
+
+	Unlike real devices, devices in this sim have significant differences,
+
+	Such as:
+
+		All ports are Ethernet and have a different port number. (Please refer to the topology)
+		VTY Lines are limited to 5.
+
+			Make sure to issue the 'line vty 0 4' command instead of 'line vty 0 15'
+
+		End devices (camera & ephones) behave differently.
+			- ePhones can automatically receive IP addresses via DHCP but are unable to be pinged. This is caused by a conflict between voice and data traffic.
+			- Cameras can automatically receive IP addresses via DHCP but will only accept one IP until the end of its DHCP lease.
+			- This means if they receive an IP from the VLAN 50 DHCP pool before you could configure IP reservation, you will have to manually issue an 'ip add dhcp' command on the cameras e0/0 interface for the reservation to take effect.
+			- On the Call Manager, there is only 1 command that won't be accepted, "port 0/0/0" under the dial-peer option. Everything else works, including IVRS.
+
+	Despite the limitations, all configurations necessary for CCNA is available for this sim (IP assignment, VLANs, DHCP, switchport, and static & default route).
+
+
+	*NOTE
+		Do not remove the access-list on CoreBABA. It is configured to prevent issues with DHCP on end devices.
+
+
+SOLUTION
+
+###### CoreTAAS: IPv4 address assignment & SVI
+
+@CoreTAAS
+config t
+ hostname COREtaas-81
+ enable secret pass
+ service password-encryption
+ no logging console
+ no ip domain-lookup
+ line console 0
+  password pass
+  login
+  exec-timeout 0 0     
+!--vty lines for this lab are limited to 5 (vty line 0 - vty line 4)
+ line vty 0 4
+  password pass
+  login
+  exec-timeout 0 0
+ Int Vlan 1
+  no shutdown
+  ip add 10.81.1.2 255.255.255.0
+  description MGMTDATA
+ Int Vlan 10
+  no shutdown
+  ip add 10.81.10.2 255.255.255.0
+  description WIRELESS
+ Int Vlan 50
+  no shutdown
+  ip add 10.81.50.2 255.255.255.0
+  description IPCCTV
+ Int Vlan 100
+  no shutdown
+  ip add 10.81.100.2 255.255.255.0
+  description VOICEVLAN
+end
+
+
+Verification:
+show ip interface brief
+show vlan brief
+
+
+*NOTE: SVIs are DOWN because VLANs do not exist.
+
+TIP: Remember to refer to the topology for connected ports/port number.
+###
+
+
+
+
+###### CoreBABA: IPv4 address assignment & SVI
+
+@CoreBABA
+config t
+ hostname COREbaba-81
+ enable secret pass
+ service password-encryption
+ no logging console
+ no ip domain-lookup
+ line console 0
+  password pass
+  login
+  exec-timeout 0 0
+!--vty lines for this lab are limited to 5 (vty line 0 - vty line 4)
+ line vty 0 4
+  password pass
+  login
+  exec-timeout 0 0
+ Int e2/0
+  no shutdown
+  no switchport
+  ip add 10.81.81.4 255.255.255.0
+ Int Vlan 1
+  no shutdown
+  ip add 10.81.1.4 255.255.255.0
+  description MGMTDATA
+ Int Vlan 10
+  no shutdown
+  ip add 10.81.10.4 255.255.255.0
+  description WIRELESS
+ Int Vlan 50
+  no shutdown
+  ip add 10.81.50.4 255.255.255.0
+  description IPCCTV
+ Int Vlan 100
+  no shutdown
+  ip add 10.81.100.4 255.255.255.0
+  description VOICEVLAN
+end
+
+
+TIP: Add the 'do' keyword to show commands when in configuration mode.
+###
+
+
+
+
+###### TRUNK & ETHERCHANNEL
+
+Use the 'show cdp neighbor' command to identify a device's connected port to another device.
+
+*NOTE: On the "show cdp neighbor table", under the 2nd column "Local interface" that is the interface of the device you are currently accessing.
+
+@CoreTAAS & CoreBABA
+show cdp neighbor
+
+
+After using the 'show cdp neighbor' command on either CoreBABA or CoreTAAS
+we discover that their connected ports are: e0/3, e1/3, e2/3
+
+@CoreTAAS & CoreBABA
+config t
+ Int Range e0/3,e1/3,e2/3
+  no shutdown
+  switchport trunk encapsulation Dot1Q
+  switchport mode trunk
+ end
+
+@CoreTAAS & CoreBABA
+config t
+ Int Range e0/3,e1/3,e2/3
+  channel-group 1 mode active
+  channel-protocol Lacp
+
+
+Verification:
+
+  show etherchannel summary
+
+
+The port-channel 1 (Po1) must be tagged with 'SU', which means the port-channel is layer 2 and is in use, working properly.
+###
+
+
+
+###### DHCP
+
+@CoreBABA
+config t
+ ip dhcp Excluded-add 10.81.1.1 10.81.1.100
+ ip dhcp Excluded-add 10.81.10.1 10.81.10.100
+ ip dhcp Excluded-add 10.81.50.1 10.81.50.100
+ ip dhcp Excluded-add 10.81.100.1 10.81.100.100
+ ip dhcp pool MGMTDATA
+  network 10.81.1.0 255.255.255.0
+  default-router 10.81.1.4
+  domain-name MGMTDATA.COM
+  dns-server 10.81.1.10
+ ip dhcp pool WIFIDATA
+  network 10.81.10.0 255.255.255.0
+  default-router 10.81.10.4
+  domain-name WIFIDATA.COM
+  dns-server 10.81.1.10
+ ip dhcp pool IPCCTV
+  network 10.81.50.0 255.255.255.0
+  default-router 10.81.50.4
+  domain-name IPCCTV.COM
+  dns-server 10.81.1.10
+ ip dhcp pool VOICEVLAN
+  network 10.81.100.0 255.255.255.0
+  default-router 10.81.100.4
+  domain-name VOICEVLAN.COM
+  dns-server 10.81.1.10
+  option 150 ip 10.81.100.8   
+  end
+
+
+###
+
+
+
+###### VLAN Creation and Switchport Access & Voice
+
+*NOTE: The command 'mls qos trust device cisco-phone' does not work on this sim.
+
+@CoreBABA
+config t
+ vlan 10
+  name WIFIVLAN
+ vlan 50
+  name IPCCTVLAN
+ vlan 69
+  name PENTEST
+ vlan 70
+  name BLUETEAMSOC
+ vlan 71
+  name HR-FUUUUU
+ vlan 100
+  name VOICEVLAN
+ Int e0/1
+  switchport mode access
+  switchport access vlan 10  
+ Int e0/2
+  switchport mode access
+  switchport access vlan 10
+ Int e2/1
+  switchport mode access
+  switchport access vlan 50  
+ Int e2/2
+  switchport mode access
+  switchport access vlan 50    
+ Int e1/0
+  switchport mode access
+  switchport access vlan 100     
+ Int e1/1
+  switchport mode access  
+  switchport voice vlan 100
+!--simply add an exclamation mark at the front of the command for it to be ignored by the device.
+  !mls qos trust device cisco-phone 
+  switchport access vlan 1
+ Int e1/2
+  switchport mode access
+  switchport voice vlan 100 
+  !mls qos trust device cisco-phone 
+  switchport access vlan 1
+ end
+
+
+Verification:
+show vlan brief
+show ip dhcp binding
+
+
+*NOTE: At this point, both ePhones & Cameras should be able to obtain an IP address via DHCP.
+It will take some time so be patient. Use the 'show ip dhcp binding' command to verify.
+    ePhones must have an IP of 10.81.100.101 and 10.81.100.102
+    Cameras will end up with an IP of 10.81.50.101 and 10.81.50.102
+
+HOWEVER this should not be the case. Because we are meant to apply IP reservation. See next task to fix the issue.
+
+TIP: Most switchports are set as access ports by default and are connected to VLAN 1
+###
+
+
+
+###### DHCP MAC Address Reservation
+
+First, we need to identify the MAC address of the cameras. Issue a 'show mac address-table' command on the switch (CoreBABA).
+
+@CoreBABA
+show mac address-table
+
+From the topology, we know that CoreBABA is connected to Camera 8 from its e2/1 interface, while Camera 6 is on CoreBABA's e2/2 interface.
+
+On the MAC address table: 
+
+    Ethernet 2/1 is associated with a MAC: a800.b00b.4cb2
+    Ethernet 2/2 is associated with a MAC: a600.b0b0.38af
+
+Using these MAC address we can configure IP reservation for the devices.
+
+@CoreBABA
+config t
+ ip routing
+ ip dhcp pool CAMERA6
+  host 10.81.50.6 255.255.255.0
+  !--The client-identifier command might fail if C6 & C8 already recieved an IP from the IPCCTV DHCP pool.
+  !--To resolve this apply the 'clear ip dhcp binding *' command to coreBABA, then paste the reservation commands again.
+  client-identifier a600.b0b0.38af
+ ip dhcp pool CAMERA8
+  host 10.81.50.8 255.255.255.0
+  client-identifier a800.b00b.4cb2
+end
+
+
+Verification:
+show ip dhcp binding
+
+*NOTE: Clearing the DHCP Binding table does not remove the IP addresses on the Cameras. To resolve this, access both Camera's CLI
+then issue an 'ip add dhcp' command on its ethernet 0/0 interface.
+
+@C6 & C8
+conf t
+ int e0/0
+  ip add dhcp
+  end
+
+
+Verification:
+show ip interface brief
+
+
+###
+
+
+
+###### CUCM: IPv4 address assignment & SVI
+
+*NOTE: The "port 0/0/0" command under dial-peer does not work because there are no voice-port for this sim.
+
+@CUCM
+config t
+ hostname CUCM-81
+ enable secret pass
+ service password-encryption
+ no logging console
+ no ip domain-lookup
+ line console 0
+  password pass
+  login
+  exec-timeout 0 0
+ line vty 0 4
+  password pass
+  login
+  exec-timeout 0 0
+ Int e0/0
+  no shutdown
+  ip add 10.81.100.8 255.255.255.0 
+  end
+
+
+###
+
+
+
+###### Analog Phones
+
+@CUCM
+configure terminal
+ dial-peer voice 1 pots
+  destination-pattern 8100
+  !--Voice ports on this sim do not exist and does not work. Added an exclamation mark to set it as a comment
+  !port 0/0/0
+ dial-peer voice 2 pots
+  destination-pattern 8101
+  !port 0/0/1
+ dial-peer voice 3 pots
+  destination-pattern 8102
+  !port 0/0/2
+ dial-peer voice 4 pots
+  destination-pattern 8103
+  !port 0/0/3
+  end
+
+
+###
+
+
+
+###### Telephony-Service
+
+@CUCM
+conf t
+ no telephony-service
+ telephony-service
+  no auto assign
+  no auto-reg-ephone
+  max-ephones 5
+  max-dn 20
+  ip source-address 10.81.100.8 port 2000
+  create cnf-files
+ ephone-dn 1
+  number 8111
+ ephone-dn 2
+  number 8122
+ ephone-dn 3
+  number 8133
+ ephone-dn 4
+  number 8144
+ ephone-dn 5
+  number 8155
+ ephone-dn 6
+  number 8166
+ ephone-dn 7
+  number 8177
+ ephone-dn 8
+  number 8188
+ ephone 1
+  mac-address 00a2.cd43.b1c7
+  type 8945
+  button 1:1 2:2 3:3 4:4
+  restart
+ ephone 2
+  mac-address 00e3.11ff.21cd
+  type 8945
+  button 1:5 2:6 3:7 4:8
+  restart
+ end
+
+
+###
+
+
+
+### Video Calls
+
+!@video call
+conf t
+ ephone 1
+  video
+ voice service voip
+ h323
+ call start slow
+ ephone 2
+  video
+ voice service voip
+ h323
+ call start slow
+end
+
+
+###
+
+
+
+###### Incoming Calls
+
+@CUCM
+configure terminal
+ voice service voip
+ ip address trusted list
+ ipv4 0.0.0.0 0.0.0.0
+ end
+
+
+###
+
+
+
+###### Outgoing Calls
+
+Since there's only one other monitor simulated for this lab, a sing configuration for outgoing calls is enough. If you wish to issue all outgoing calls (11 - 92), then feel free.
+
+@CUCM
+configure terminal
+ dial-peer voice 92 Voip
+ destination-pattern 92..
+ session target ipv4:10.92.100.8
+ codec g711ULAW
+
+
+###
+
+
+###### IVRS
+
+!@IVRS
+config t
+ dial-peer voice 69 voip
+  service rivanaa out-bound
+  destination-pattern 8169
+  session target ipv4:10.81.100.8
+  incoming called-number 8169
+  dtmf-relay h245-alphanumeric
+  codec g711ulaw
+  no vad
+ !
+ telephony-service
+  moh "flash:/en_bacd_music_on_hold.au"
+ !
+ application
+  service rivanaa flash:app-b-acd-aa-3.0.0.2.tcl
+   paramspace english index 1        
+   param number-of-hunt-grps 2
+   param dial-by-extension-option 8
+   param handoff-string rivanaa
+   param welcome-prompt flash:en_bacd_welcome.au
+   paramspace english language en
+   param call-retry-timer 15
+   param service-name rivanqueue
+   paramspace english location flash:
+   param second-greeting-time 60
+   param max-time-vm-retry 2
+   param voice-mail 1234
+   param max-time-call-retry 700
+   param aa-pilot _69
+  service rivanqueue flash:app-b-acd-3.0.0.2.tcl
+   param queue-len 15
+   param aa-hunt1 8100
+   param aa-hunt2 8101
+   param aa-hunt3 8177
+   param aa-hunt4 8133
+   param queue-manager-debugs 1
+   param number-of-hunt-grps 4
+   end
+
+###
+
+
+
+###### EDGE: IPv4 address assignment & SVI
+
+@EDGE
+config t
+ hostname EDGE-81
+ enable secret pass
+ service password-encryption
+ no logging console
+ no ip domain-lookup
+ line console 0
+  password pass
+  login
+  exec-timeout 0 0
+ line vty 0 4
+  password pass
+  login
+  exec-timeout 0 0
+ Int e0/0
+  description FIBEROPTIC-TO-SWITCH
+  ip add 10.81.81.1 255.255.255.0
+  no shutdown
+ Int e0/1
+  description PLDT-ME-WAN
+  ip add 200.0.0.81 255.255.255.0
+  no shutdown
+ Int Loopback 0
+  description VIRTUALIP-FOR-ROUTING
+  ip add 81.0.0.1 255.255.255.255
+ end
+
+
+###
+
+
+
+
+###### EDGE, CoreBABA, CUCM: Static, Default, & OSPF Routing
+
+Depending on what is taught on Day 1, issue either static routing or OSPF.
+Either one will work for this sim.
+
+
+### STATIC ROUTING
+
+@EDGE
+conf t
+ ip routing 
+ !--route to student 92's LAN
+ ip route 10.92.0.0 255.255.0.0 200.0.0.92
+ !
+ !--route for edge to discover user 81's LAN
+ ip route 10.81.0.0 255.255.0.0 10.81.81.4
+ end
+
+@CoreBABA
+conf t
+ ip routing
+ ip route 0.0.0.0 0.0.0.0 10.81.81.1
+ end
+
+@CUCM
+conf t
+ ip routing
+ ip route 0.0.0.0 0.0.0.0 10.81.100.4
+ end
+
+@PC
+conf t
+ ip routing
+ ip route 10.0.0.0 255.0.0.0 10.81.1.4
+ ip route 200.0.0.0 255.255.255.0 10.81.1.4
+ end
+
+
+Verification:
+    show ip route
+
+@PC, CUCM, & EDGE
+ping 10.92.1.10
+!ping must be successful
+!
+traceroute 10.92.1.10
+!should pass through every hop towards P92
+
+
+
+### OSPF ROUTING
+
+@EDGE
+config t
+ router ospf 1
+ router-id 81.0.0.1
+ network 200.0.0.0  0.0.0.255 area 0
+ network 10.81.81.0  0.0.0.255 area 0
+ network 81.0.0.1 0.0.0.0 area 0
+ Interface e0/0
+  ip ospf network point-to-point
+ end
+
+@CoreBABA
+config t
+ router ospf 1
+ router-id 10.81.81.4
+ network 10.81.0.0  0.0.255.255 area 0
+ int e2/0
+  ip ospf network point-to-point
+ end
+
+@CUCM
+config t
+ router ospf 1
+ router-id 10.81.100.8
+ network 10.81.100.0  0.0.0.255  area 0
+ end
+
+
+Verification:
+    show ip ospf neighbor
+
+@CoreBABA
+show ip ospf neighbor
+!CoreBABA must have CUCM(10.81.100.8) & EDGE(81.0.0.1) displayed.
+
+
+###
+
+
+
+FINALIZE
+
+    PC must be able to ping PC92 (@PC: ping 10.92.1.10 or traceroute 10.92.1.10)
+    End devices are part of the correct vlan (@CoreBABA: show vlan brief)
+    The following end devices must have corresponding IPs:
+        eP1: 10.81.100.101
+        eP2: 10.81.100.102
+        c6: 10.81.50.6
+        c8: 10.81.50.8
+
+        Use the "show ip int brief" command on the end devices to verify.
+
+
+###########
+
+PRECONFIGURATIONS
+
+Name: Day 1 Sim
+Desc: VLAN, DHCP, Switchport, IPv4 assignment, Static & Default Routing
+
+***
+
+Netmap:
+
+PC - 29
+CoreT - 30
+CoreB - 31
+WLC - 32
+AP - 33
+CUCM - 34
+eP1 - 35
+eP2 - 36
+C8 - 37
+C6 - 38
+EDGE - 39
+EDGE92 - 40
+CoreB92 - 41
+P92 - 42
+
+30:0/3 31:0/3
+30:1/3 31:1/3
+30:2/3 31:2/3
+31:0/0 29:0/0
+31:0/1 32:0/0
+31:0/2 33:0/0
+31:1/0 34:0/0
+31:1/1 35:0/0
+31:1/2 36:0/0
+31:2/0 39:0/0
+31:2/1 37:0/0
+31:2/2 38:0/0
+39:0/1 40:0/1
+40:0/0 41:2/0
+41:0/0 42:0/0
+
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ !
+ !PC
+ ip host winServer22.RIVANTraining.com 10.81.1.10
+ !
+ !CoreTAAS
+ ip host c3560cg.l3-coreTAAS-v1.RIVANTraining.com 10.81.1.2
+ ip host c3560cg.l3-coreTAAS-v10.RIVANTraining.com 10.81.10.2
+ ip host c3560cg.l3-coreTAAS-v50.RIVANTraining.com 10.81.50.2
+ ip host c3560cg.l3-coreTAAS-v100.RIVANTraining.com 10.81.100.2
+ !
+ !CoreBABA
+ ip host c3560cg.l3-coreBABA-v1.RIVANTraining.com 10.81.1.4
+ ip host c3560cg.l3-coreBABA-v10.RIVANTraining.com 10.81.10.4
+ ip host c3560cg.l3-coreBABA-v50.RIVANTraining.com 10.81.50.4
+ ip host c3560cg.l3-coreBABA-v100.RIVANTraining.com 10.81.100.4
+ ip host c3560cg.l3-coreBABA-e20.RIVANTraining.com 10.81.81.4
+ !
+ !wlc
+ ip host 1815i-WLC.RIVANTraining.com 10.81.10.81
+ !
+ !ap
+ ip host 2702-AironetAP.RIVANTraining.com 10.81.10.3
+ !
+ !cucm
+ ip host cucm-Express9.1.RIVANTraining.com 10.81.100.8
+ !
+ !eP1
+ ip host 8945ipPhone1.RIVANTraining.com 10.81.100.101
+ !
+ !eP2
+ ip host 8945ipPhone2.RIVANTraining.com 10.81.100.102
+ !
+ !c8
+ ip host ipDomeCam8.RIVANTraining.com 10.81.50.8
+ !
+ !c6
+ ip host ipDomeCam6.RIVANTraining.com 10.81.50.6
+ !
+ !edge
+ ip host 4321xrEdge-e00.RIVANTraining.com 10.81.81.1
+ ip host 4321xrEdge-e01.RIVANTraining.com 200.0.0.81
+ ip host 4321xrEdge-lo0.RIVANTraining.com 81.0.0.1
+ !
+ !edge92
+ ip host 4321xrEdge-m92-e01.RIVANTraining.com 200.0.0.92
+ ip host 4321xrEdge-m92-lo0.RIVANTraining.com 92.0.0.1
+ ip host 4321xrEdge-m92-e00.RIVANTraining.com 10.92.92.1
+ !
+ !CoreBABA92
+ ip host c3560cg.l3-m92-e20.RIVANTraining.com 10.92.92.4
+ ip host c3560cg.l3-m92-v1.RIVANTraining.com 10.92.1.4
+ ip host c3560cg.l3-m92-v10.RIVANTraining.com 10.92.10.4
+ ip host c3560cg.l3-m92-v50.RIVANTraining.com 10.92.50.4
+ ip host c3560cg.l3-m92-v100.RIVANTraining.com 10.92.100.4
+ !
+ !P92
+ ip host windowsServer-m92.RIVANTraining.com 10.92.1.10
+ end
+
+
+------------------------------------------@CoreTAAS
+
+conf t
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Catalyst 3560 Switch
+ 
+############################################################
+ 
+The Cisco Catalyst 3560 Series is a line of fixed-configuration, 
+enterprise-class switches that include IEEE 802.3af and Cisco 
+prestandard Power over Ethernet (PoE) functionality in Fast Ethernet 
+and Gigabit Ethernet configurations.
+ 
+The Cisco Catalyst 3560 is an ideal access layer switch for small 
+enterprise LAN access or branch-office environments, combining both 
+10/100/1000 and PoE configurations for maximum productivity and 
+investment protection while enabling the deployment of new applications 
+such as IP telephony, wireless access, video surveillance, 
+building management systems, and remote video kiosks.
+  
+############################################################
+ 
+ 
+ 
+*NOTE: Refer to the lab description in the GUI for additional information
+and Solution for configurations.
+ 
+ 
+|
+end
+
+
+------------------------------------------@CoreBABA
+
+conf t
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Catalyst 3560 Switch
+ 
+############################################################
+ 
+The Cisco Catalyst 3560 Series is a line of fixed-configuration, 
+enterprise-class switches that include IEEE 802.3af and Cisco 
+prestandard Power over Ethernet (PoE) functionality in Fast Ethernet 
+and Gigabit Ethernet configurations.
+ 
+The Cisco Catalyst 3560 is an ideal access layer switch for small 
+enterprise LAN access or branch-office environments, combining both 
+10/100/1000 and PoE configurations for maximum productivity and 
+investment protection while enabling the deployment of new applications 
+such as IP telephony, wireless access, video surveillance, 
+building management systems, and remote video kiosks. 
+ 
+############################################################
+ 
+ 
+ 
+*NOTE: Refer to the lab description in the GUI for additional information
+and Solution for configurations.
+ 
+ 
+DO NOT remove or make alterations to the access-list BlockDataDHCP.
+ 
+ 
+|
+ no ip access-list extended BlockDataDHCP
+ ip access-list extended BlockDataDHCP
+  deny udp any any eq 67
+  deny udp any any eq 68
+  permit ip any any
+ int vlan 1
+  ip access-group BlockDataDHCP in
+  ip access-group BlockDataDHCP out
+  end
+ 
+
+
+------------------------------------------@PC1
+
+conf t
+ hostname WinServer2022-PC
+ enable secret C1sc0123
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+ 
+##############################
+ 
+WINDOWS SERVER 2022
+ 
+############################################################
+ 
+Windows Server 2022 introduces advanced multi-layer security, 
+hybrid capabilities with Azure, and a flexible 
+application platform.
+ 
+It includes significant improvements to Windows containers, 
+such as smaller image sizes for faster download, simplified 
+network policy implementation and containerization tools for 
+.NET applications.
+ 
+############################################################
+ 
+ 
+ 
+PASSWORD: C1sc0123
+ 
+ 
+|
+ line cons 0
+  password C1sc0123
+  no login
+  exec-timeout 0 0
+ line vty 0 4
+  password C1sc0123
+  login
+  exec-timeout 0 0
+ int lo 1
+  ip add 10.3.3.101 255.255.255.0
+  no shut
+ int e0/0
+  ip add 10.81.1.10 255.255.255.0
+  no shut
+ ip route 0.0.0.0 0.0.0.0 10.3.3.1
+ end
+
+
+------------------------------------------@WLC
+
+conf t
+ hostname aironet-wlc
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Aironet 1815i Access Point
+ 
+############################################################
+ 
+The Cisco Aironet 1815i delivers industry-leading wireless 
+performance with support for the latest Wi-Fi standard, 
+IEEE's 802.11ac Wave 2. It also meets the growing 
+requirements of wireless networks by delivering a better 
+user experience.
+ 
+Ideal for small and medium-sized networks, 
+the Cisco® Aironet® 1815i Access Point brings a full slate of 
+Cisco high-performance functionality to the enterprise environment.
+The 1815i extends support to a new generation of Wi-Fi clients, 
+such as smartphones, tablets, and high-performance laptops that 
+have integrated 802.11ac Wave 1 or Wave 2 support.
+ 
+############################################################
+ 
+ 
+ 
+USERNAME: admin
+PASSWORD: pass
+ 
+ 
+|
+ username admin privilege 15 secret pass
+ line cons 0
+  password pass
+  login local
+  exec-timeout 0 0
+ line vty 0 4
+  transport input all
+  password pass
+  login local
+  exec-timeout 0 0
+ int e0/0
+  ip add 10.81.10.81 255.255.255.0
+  no shut
+ ip route 0.0.0.0 0.0.0.0 10.81.10.4
+ end
+
+
+------------------------------------------@AP
+
+conf t
+ hostname aironet-ap
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Aironet 2702i Access Point
+ 
+############################################################
+ 
+The Cisco® Aironet® 2700 Series of Wi-Fi access points (APs) 
+delivers industry-leading 802.11ac performance at a price point 
+ideal for plugging capacity and coverage gaps in dense 
+indoor environments.
+ 
+The Aironet 2700 series supports 802.11ac Wave 1 
+In its first implementation, providing a theoretical connection 
+rate of up to 1.3 Gbps. 
+ 
+That is roughly triple the rates offered by today's high-end 
+802.11n APs.
+ 
+############################################################
+ 
+ 
+ 
+USERNAME: admin
+PASSWORD: pass
+ 
+ 
+|
+ username admin privilege 15 secret pass
+ line cons 0
+  password pass
+  login local
+  exec-timeout 0 0
+ line vty 0 4
+  transport input all
+  password pass
+  login local
+  exec-timeout 0 0
+ int e0/0
+  ip add 10.81.10.3 255.255.255.0
+  no shut
+ ip route 0.0.0.0 0.0.0.0 10.81.10.4
+ end
+
+
+------------------------------------------@eP1
+
+conf t
+ hostname ePhone-1
+ int e0/0
+  mac-address 00a2.cd43.b1c7
+  end
+
+
+------------------------------------------@eP2
+
+conf t
+ hostname ePhone-2
+ int e0/0
+  mac-address 00e3.11ff.21cd
+  end
+
+
+------------------------------------------@eP1 & eP2
+
+conf t
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Unified IP Phone 8945
+ 
+############################################################
+ 
+The Cisco Unified IP Phone 8945 integrates video communications 
+into the Cisco Unified IP Phones 8900 Series with a built-in, 
+high-quality video, VGA or 640 x 480 pixel, camera up to 
+30 frames per second, for both endcoding anddecoding.
+ 
+The phone supports four lines and four context-sensitive soft keys 
+along with a high-definition voice, full-duplex speakerphone for a 
+more productive and more flexible endpoint experience.
+ 
+############################################################
+ 
+ 
+*NOTE: There is no need to change any configurations on this 
+device. It will automatically obtain an IP address via DHCP, 
+given the DHCP server (coreBABA) is configured properly.
+ 
+ 
+    HOWEVER, it will not display its ip address on any interface.
+    
+Use the 'show ip dhcp binding' command on the switch (CoreBABA) 
+to identify if the ePhones recieved an IP.
+ 
+Expected IPs: 
+ 
+ePhones must have an IP from the
+ 
+10.81.100.100 - 10.81.100.254 range.
+ 
+ 
+|
+ line cons 0
+  no login
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+ int e0/0
+  no shut
+  ip add dhcp
+ int e0/0.100
+  encapsulation dot1q 100
+  ip add dhcp
+ !
+ no ip access-list extended BlockDataDHCP
+ ip access-list extended BlockDataDHCP
+  permit udp 10.81.100.0 0.0.0.255 any eq 67
+  permit udp 10.81.100.0 0.0.0.255 any eq 68
+  permit icmp 10.81.100.0 0.0.0.255 any
+ int e0/0
+  ip access-group BlockDataDHCP in
+  end
+
+
+------------------------------------------@CUCM
+
+conf t
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Unified Communications Manager Express 9.1
+ 
+############################################################
+ 
+Cisco® Unified Communications Manager Express provides call 
+processing to Cisco Unified IP Phones for distributed enterprise 
+branch-office environments and retail deployments. Even branch 
+offices within the same enterprise can have different needs and 
+requirements when it comes to unified communications. 
+ 
+Cisco Unified Communications Manager Express delivers on this need 
+by providing localized call control, mobility, and conferencing 
+alongside data applications on Cisco Integrated Services Routers.
+ 
+############################################################
+ 
+ 
+ 
+ 
+|
+end
+
+
+------------------------------------------@C8
+
+conf t
+ hostname Camera-8
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Video Surveillance 3000 IP Camera
+ 
+############################################################
+ 
+The Cisco® Video Surveillance 3520 IP Camera is 
+a high-definition, full-functioned video endpoint with 
+industry-leading image quality and processing power. The camera is 
+capable of resolutions up to 1280x800 at 30 frames per second while 
+optimizing network usage with either H.264 or MJPEG compression.
+ 
+Contact closures allow integration with access control systems. 
+With its open, standards-based design, the camera provides an ideal 
+platform for integration and operation as an independent device or 
+as part of a Cisco Video Surveillance network.
+ 
+############################################################
+ 
+ 
+ 
+*NOTE: There is no need to change any configurations on this 
+device. It will automatically obtain an IP address via DHCP, 
+given the DHCP server (coreBABA) is configured properly.
+Use the 'show ip interface brief' command to verify its ip address, 
+or use the 'show ip dhcp binding' command on the switch (CoreBABA) 
+to identify if the correct ip address is reserved for the camera.
+ 
+The IP binding must have a lease expiration of INFINITE.
+ 
+The expected IP of this device is 10.81.50.8
+     If the IP on the camera does not match with the reserved IP, it
+     simply means it got an ip from the vlan 50 dhcp pool first before
+     the ip reservation was issued on the dhcp server (coreBABA).
+ 
+ 
+USERNAME: admin
+PASSWORD: C1sc0123
+ 
+ 
+|
+ username admin privilege 15 secret C1sc0123
+ line cons 0
+  password pass
+  login local
+  exec-timeout 0 0
+ line vty 0 4
+  password pass
+  login local
+  exec-timeout 0 0
+ int e0/0
+  no shut
+  ip add dhcp
+  mac-address a800.b00b.4cb2
+  ip dhcp client client-id hex a800b00b4cb2 
+  end
+
+
+------------------------------------------@C6
+
+conf t
+ hostname Camera-6
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Video Surveillance 3000 IP Camera
+ 
+############################################################
+ 
+The Cisco® Video Surveillance 3520 IP Camera is 
+a high-definition, full-functioned video endpoint with 
+industry-leading image quality and processing power. The camera is 
+capable of resolutions up to 1280x800 at 30 frames per second while 
+optimizing network usage with either H.264 or MJPEG compression.
+ 
+Contact closures allow integration with access control systems. 
+With its open, standards-based design, the camera provides an ideal 
+platform for integration and operation as an independent device or 
+as part of a Cisco Video Surveillance network.
+ 
+############################################################
+ 
+ 
+ 
+*NOTE: There is no need to change any configurations on this 
+device. It will automatically obtain an IP address via DHCP, 
+given the DHCP server (coreBABA) is configured properly.
+ 
+Use the 'show ip interface brief' command to verify its ip address, 
+or use the 'show ip dhcp binding' command on the switch (CoreBABA) 
+to identify if the correct ip address is reserved for the camera.
+ 
+The IP binding must have a lease expiration of INFINITE.
+ 
+The expected IP of this device is 10.81.50.6
+ 
+     If the IP on the camera does not match with the reserved IP, it
+     simply means it got an ip from the vlan 50 dhcp pool first before
+     the ip reservation was issued on the dhcp server (coreBABA).
+ 
+ 
+USERNAME: admin
+PASSWORD: C1sc0123
+ 
+ 
+|
+ username admin privilege 15 secret C1sc0123
+ line cons 0
+  password pass
+  login local
+  exec-timeout 0 0
+ line vty 0 4
+  password pass
+  login local
+  exec-timeout 0 0
+ int e0/0
+  no shut
+  ip add dhcp
+  mac-address a600.b0b0.38af
+  ip dhcp client client-id hex a600b0b038af
+  end
+
+
+------------------------------------------@EDGE92
+
+conf t
+ hostname EDGE-92
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco 4321 XR Edge Router
+ 
+############################################################
+ 
+The Cisco 4000 Family Integrated Services Router ISR 
+revolutionizes WAN communications in the enterprise branch. 
+With new levels of built-in intelligent network capabilities 
+and convergence. 
+ 
+It specifically addresses the growing need 
+for application-aware networking in distributed enterprise 
+sites.
+ 
+############################################################
+ 
+ 
+ 
+*NOTE: This device has been preconfigured with IPv4 address 
+assignment, static routing, and OSPF.
+ 
+ 
+PASSWORD: pass
+ 
+ 
+|
+ line cons 0
+  password pass
+  login
+  exec-timeout 0 0
+ line vty 0 4
+  password pass 
+  login
+  exec-timeout 0 0
+ int e0/1
+  ip add 200.0.0.92 255.255.255.0
+  no shut
+  desc OUTSIDE
+ int e0/0
+  ip add 10.92.92.1 255.255.255.0
+  ip ospf network point-to-point
+  no shut
+  desc INSIDE
+ int lo0
+  ip add 92.0.0.1 255.255.255.0
+  no shut
+  desc VIRTUAL-IP
+ !
+ !OSPF
+ router ospf 1
+  router-id 92.0.0.1
+  network 200.0.0.0 0.0.0.255 area 0
+  network 10.92.92.0 0.0.0.255 area 0
+  network 92.0.0.1 0.0.0.0 area 0
+  exit
+ !
+ !Static Routing
+ ip route 10.81.0.0 255.255.0.0 200.0.0.81
+ ip route 10.92.0.0 255.255.0.0 10.92.92.4
+ end
+
+
+------------------------------------------@CoreBABA-92
+
+conf t
+ hostname CoreBABA-92
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+ 
+##############################
+ 
+Cisco Catalyst 3560 Switch
+ 
+############################################################
+ 
+The Cisco Catalyst 3560 Series is a line of fixed-configuration, 
+enterprise-class switches that include IEEE 802.3af and Cisco 
+prestandard Power over Ethernet (PoE) functionality in Fast Ethernet 
+and Gigabit Ethernet configurations.
+ 
+The Cisco Catalyst 3560 is an ideal access layer switch for small 
+enterprise LAN access or branch-office environments, combining both 
+10/100/1000 and PoE configurations for maximum productivity and 
+investment protection while enabling the deployment of new applications 
+such as IP telephony, wireless access, video surveillance, 
+building management systems, and remote video kiosks. 
+ 
+############################################################
+ 
+ 
+*NOTE: This device has been preconfigured with IPv4 address 
+assignment, VLANs, SVI, static routing, and OSPF
+ 
+ 
+PASSWORD: pass
+ 
+ 
+ 
+|
+ line cons 0
+  password pass
+  login
+  exec-timeout 0 0
+ line vty 0 4
+  password pass 
+  login
+  exec-timeout 0 0
+ vlan 10
+  name WIRELESS
+ vlan 50
+  name CCTV
+ vlan 100
+  name VOICE
+ int vlan 1
+  ip add 10.92.1.4 255.255.255.0
+  no shut
+ int vlan 10
+  ip add 10.92.10.4 255.255.255.0
+  no shut
+ int vlan 50
+  ip add 10.92.50.4 255.255.255.0
+  no shut
+ int vlan 100
+  ip add 10.92.100.4 255.255.255.0
+  no shut
+ int e2/0
+  no sw
+  ip add 10.92.92.4 255.255.255.0
+  ip ospf network point-to-point
+  no shut
+ int e0/0
+  sw mo ac
+  sw ac vlan 1
+ ip routing
+ !
+ !OSPF Routing
+ router ospf 1
+  router-id 10.92.92.4
+  network 10.92.0.0 0.0.255.255 area 0
+  exit
+ !
+ !Static Routing
+ ip route 0.0.0.0 0.0.0.0 10.92.92.1
+ end
+
+
+------------------------------------------@PC92
+
+conf t
+ hostname WinServer2022-PC92
+ enable secret C1sc0123
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ banner motd |
+ 
+##############################
+ 
+WINDOWS SERVER 2022
+ 
+############################################################
+ 
+Windows Server 2022 introduces advanced multi-layer security, 
+hybrid capabilities with Azure, and a flexible 
+application platform.
+ 
+It includes significant improvements to Windows containers, 
+such as smaller image sizes for faster download, simplified 
+network policy implementation and containerization tools for 
+.NET applications.
+ 
+############################################################
+ 
+ 
+ 
+PASSWORD: C1sc0123
+ 
+ 
+|
+ line cons 0
+  password C1sc0123
+  no login
+  exec-timeout 0 0
+ line vty 0 4
+  password C1sc0123
+  login
+  exec-timeout 0 0
+ int e0/0
+  ip add 10.92.1.10 255.255.255.0
+  no shut
+ ip route 0.0.0.0 0.0.0.0 10.92.1.4
+  end

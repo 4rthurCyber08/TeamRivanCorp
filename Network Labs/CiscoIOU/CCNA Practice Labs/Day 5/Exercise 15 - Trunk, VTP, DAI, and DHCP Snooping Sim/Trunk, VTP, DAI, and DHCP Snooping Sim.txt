@@ -1,0 +1,114 @@
+
+Device = Port
+
+R1	2097
+R2	2098
+R3	2099
+R4	2100
+R5	2101
+R6	2102
+
+
+**
+INSTRUCTIONS
+
+Refer to the topology. 
+All physical cabling is in place. Routers R3 and R4 have the necessary configurations and are inaccessible.
+
+1. R5 fails to form neighborships and adjacancies with other OSPF routers. Resolve these issues only from R5 and R6.
+	- R4 is trying to form a point-to-point network with R5.
+	- R3 and R6 are not advertising routes or forming a neighborship with R5.
+
+2. Set a default route on R2 with R3 as the primary gateway and R4 as the secondary.
+
+3. R1 is unable to reach R6. Troubleshoot this issue from R1 and R2.
+
+
+**
+SOLUTION
+
+1. R5 fails to form neighborships and adjacancies with other OSPF routers. Resolve these issues only from R5.
+	- R4 is trying to form a point-to-point network with R5.
+	
+@R5
+conf t
+ int e0/2
+  ip ospf network point-to-point
+  end
+
+Verify: Use the "show ip ospf neighbor" command on R5. R4 must be in the Full state.
+
+	- R3 and R6 are not advertising routes or forming a neighborship with R5
+
+The requirements to form a neighborship between ospf routers are as follows:
+	Same Area ID
+	Same Area type
+	Same Subnet Mask
+	Same Hello and Dead timers
+	Same Authentication
+	They see their own OSPF RID in each other's Hello packet
+
+Use various show commands to determine the cause of the issue.
+
+@R5, R6
+show ip protocols - check the router ID, area ID & the advertised networks (Area ID, Subnet Mask, Network)
+show ip ospf database - check LSA information
+show ip ospf neigh - check neighboring router's states.
+show ip ospf int - check process ID, network type, and hello & dead timer intervals.
+show ip int brief - check if port are UP/DOWN or are configured with proper IP.
+
+Through the show command "show ip protocols" we discover that R5 advertised the correct network (10.3.35.0 /29) but assigned the wrong area ID.
+We must resolve the issue by removing the wrong configuration then replacing it with the correct one.
+
+@R5
+conf t
+ router ospf 1
+  no network 10.3.35.0 0.0.0.7 area 2
+  network 10.3.35.0 0.0.0.7 area 0
+
+When it comes to R6, the "show ip ospf int" command shows us that the hello and dead intervals between R5 & R6 do not match.
+There's no specification what interval to use, so simply set the interval to default.
+
+@R5, R6
+conf t
+ int e0/0
+  ip ospf hello-interval 10
+  ip ospf dead-interval 40
+  end
+
+Verify: Use the "show ip ospf neighbor" command once more on R5 and make sure that R3, R4, and R6 are present and are in FULL state while R4 is point-to-point (-)
+
+2. Set a default route on R2 with R3 as the primary gateway and R4 as the secondary.
+
+We don't know R3 or R4's IPs on their e0/1 interface, and the command "show cdp neigh" does not reveal R3 or R4. 
+This simply means CDP is disable for R3 & R4.
+
+The only option left to configure R3 & R4 as the default gateway is by specifying an interface instead of a next-hop.
+
+@R2
+conf t
+ ip route 0.0.0.0 0.0.0.0 e0/1 
+ ip route 0.0.0.0 0.0.0.0 e0/2 2
+ end
+
+Verify: Use ping on R2 destined for any IP within the OSPF area.
+
+3. R1 is unable to reach R6. Troubleshoot this issue from R1 and R2.
+
+When it comes to reachability, check the routing table first.
+
+@R1
+show ip route
+
+Check if R1 has any route for R6's IP. If not, make sure R1 has a default route configured.
+From the show command, its clear the R1 has neither routing nor default gateway. Simply configure R2 as the gateway for R1 since R2 can reach R6.
+
+Use the show ip int brief command on R2 to check its IP on its e0/0 interface to be used as the gateway for R1.
+
+@R1
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.0.12.2
+ end
+
+Verify: From R1 ping R6. Ping must be successful.
+

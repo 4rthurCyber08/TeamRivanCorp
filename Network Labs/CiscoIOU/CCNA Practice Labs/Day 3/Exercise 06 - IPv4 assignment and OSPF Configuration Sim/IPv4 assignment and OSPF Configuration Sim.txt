@@ -1,0 +1,269 @@
+Exercise 06
+IPv4 assignment and OSPF Configuration Sim
+
+For Accessing Devices
+
+ Device 	Port
+ R1 	 	2086
+ R2 	 	2087
+ R3 	 	2088
+ R4 	 	2089
+
+
+TASKS
+
+R5 is preconfigured for OSPF and inaccessible. Ipv4 addressing is incomplete.
+You are instructed to finish Ipv4 assignment and configuration for OSPF on routers R1, R2, R3, R4 with the following:
+
+Do not remove or change any preconfigurations.
+
+
+1. On the link between R1 & R2,
+    - Assign the first valid IP of the network 10.0.12.64/27 on R1's e0/0 interface.
+    - Assign the last valid IP on R2's e0/0 interface.
+
+2. On the link between R4 & R5,
+    - Find the network of R5's IP address specified on the topology. Then, assign the last valid IP of the network on R4's e0/0 interface.
+
+3. On the network between R3 & R4,
+    - Assign the last valid IP on R4's e0/2 interface.
+
+4. Configure OSPF on R1, R2, R3, and R4.
+    - Set the loopback IP of each router as their router ID.
+    - Advertise ALL Connected Neworks.
+
+5. Make sure that R2 and R3 do not perform DR/BDR election on the link between them.
+
+6. Make sure R3 becomes the DR on the link between R3 & R4
+    - Set R3 with the highest priority.
+
+
+SOLUTION
+
+ 1. On the link between R1 & R2,
+    - Assign the first valid IP of the network 10.0.12.64/27 on R1's e0/0 interface.
+    - Assign the last valid IP on R2's e0/0 interface.
+
+Network:                       10.0.12.64 /27  (4th, 32i)
+First Valid (+1):            10.0.12.65
+Last Valid (-1):             10.0.12.94
+Last IP/Broadcast (-1): 10.0.12.95
+
+Not Network:                10.0.12.96
+
+@R1
+conf t
+ int e0/0
+  ip add 10.0.12.65 255.255.255.224
+  no shut
+  end
+
+@R2
+conf t
+ int e0/0
+  ip add 10.0.12.94 255.255.255.224
+  no shut
+  end
+
+
+2. On the link between R4 & R5,
+    - Find the network of R5's IP address specified on the topology. Then, assign the last valid IP of the network on R4's e0/0 interface.
+
+10.0.54.154 /25 (4th, 128i)
+
+Network:                       10.0.54.128 /25
+First Valid (+1):            10.0.54.129
+Last Valid (-1):             10.0.54.254
+Last IP/Broadcast (-1): 10.0.54.255
+
+Not Network:                10.0.55.0 /25
+
+@R4
+conf t
+ int e0/0
+  ip add  10.0.54.254 255.255.255.128
+  no shut
+  end
+
+
+3. On the network between R3 & R4,
+    - Assign the last valid IP on R4's e0/2 interface.
+
+Since there is no subnet mask displayed on the topology, we will need to check via R3's CLI
+
+@R3
+show ip route | inc C
+
+
+We discover that the network connected to R3's e0/2 interface is 10.0.32.0 /20
+
+Network:                       10.0.32.0 /20 (3rd, 16i)
+First Valid (+1):            10.0.32.1
+Last Valid (-1):             10.0.47.254
+Last IP/Broadcast (-1): 10.0.47.255
+
+Not Network:                10.0.48.0 /25
+
+@R4
+conf t
+ int e0/2
+  ip add 10.0.47.254 255.255.240.0
+  no shut
+  end
+
+
+4. Configure OSPF on R1, R2, R3, and R4.
+    - Set the loopback IP of each router as their router ID.
+    - Advertise ALL Connected Neworks.
+
+To identify ALL connected neworks. Use the "show ip route | inc C" command for each router.
+
+@R1,R2,R3,R4
+show ip route | inc C
+
+
+Once all networks are identified, configure OSPF on each router with a process ID of 5 and area 0 as specified on the topology.
+
+@R1
+conf t
+ router ospf 5
+  router-id 1.1.1.1
+  network 1.1.1.1 0.0.0.0 area 0
+  network 10.0.12.64 0.0.0.31 area 0
+  end
+
+@R2
+conf t
+ router ospf 5
+  router-id 2.2.2.2
+  network 2.2.2.2 0.0.0.0 area 0
+  network 10.0.12.64 0.0.0.31 area 0
+  network 10.0.23.20 0.0.0.3 area 0
+  end
+
+@R3
+conf t
+ router ospf 5
+  router-id 3.3.3.3
+  network 3.3.3.3 0.0.0.0 area 0
+  network 10.0.23.20 0.0.0.3 area 0
+  network 10.0.32.0 0.0.15.255 area 0
+  end
+
+@R4
+conf t
+ router ospf 5
+  router-id 4.4.4.4
+  network 4.4.4.4 0.0.0.0 area 0
+  network 10.0.32.0 0.0.15.255 area 0
+  network 10.0.54.128 0.0.0.127 area 0
+  end
+
+
+5. Make sure that R2 and R3 do not perform DR/BDR election on the link between them.
+
+@R2,R3
+conf t
+ int e0/1
+  ip ospf network point-to-point
+  end
+
+
+6. Make sure R3 becomes the DR on the link between R3 & R4
+    - Set R3 with the highest priority.
+
+@R3
+conf t
+ int e0/2
+  ip ospf priority 255
+  end
+
+###########
+
+PRECONFIGURATIONS
+
+ Name: Exercise 06
+Desc: IPv4 assignment and OSPF Configuration Sim
+
+***
+
+Netmap:
+
+R1    86
+R2    87
+R3    88
+R4    89
+R5    90
+
+87:0/0 86:0/0
+87:0/1 88:0/1
+89:0/0 90:0/0
+89:0/2 88:0/2
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+
+@R1
+conf t
+ hostname R1
+ int lo0
+  ip add 1.1.1.1 255.255.255.255
+  end
+
+@R2
+conf t
+ hostname R2
+ int lo0
+  ip add 2.2.2.2 255.255.255.255
+ int e0/1
+  ip add 10.0.23.21 255.255.255.252
+  no shut
+  end
+
+@R3
+conf t
+ hostname R3
+ int lo0
+  ip add 3.3.3.3 255.255.255.255
+ int e0/1
+  ip add 10.0.23.22 255.255.255.252
+  no shut
+ int e0/2
+  ip add 10.0.34.78 255.255.240.0
+  no shut
+  end
+
+@R4
+conf t
+ hostname R4
+ int lo0
+  ip add 4.4.4.4 255.255.255.255
+ int e0/2
+  ip ospf priority 254
+  end
+
+@R5
+conf t
+ hostname R5
+ int lo0
+  ip add 5.5.5.5 255.255.255.255
+ int e0/0
+  ip add 10.0.54.154 255.255.255.128
+  no shut
+ ip routing
+ router ospf 5
+  router-id 5.5.5.5
+  network 5.5.5.5 0.0.0.0 area 0
+  network 10.0.54.128 0.0.0.127 area 0
+  end
