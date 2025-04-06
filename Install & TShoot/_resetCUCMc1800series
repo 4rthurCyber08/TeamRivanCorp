@@ -1,0 +1,25 @@
+Access ROMON
+
+CTRL + PAUSE | BREAK = Ignore Boot
+
+confreg 0x2142
+!access the router without the password.
+reset
+
+@CUCM
+conf t
+ enable secret pass
+ end
+wr
+reload
+
+! or Remove Power Adapter
+
+********************
+CTRL + PAUSE | BREAK = Ignore Boot
+
+confreg 0x2102
+!Boot from startup config
+reset
+
+Done!
