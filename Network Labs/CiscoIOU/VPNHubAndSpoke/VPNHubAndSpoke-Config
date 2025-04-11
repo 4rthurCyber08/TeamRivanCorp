@@ -1,0 +1,225 @@
+Lab Name: VPNHubAndSpoke
+Description: Multi Site DMVPN NHRP mGRE Enterprise Lab
+Time: 0
+
+
+---------------| Netmap:
+135:0/0 137:0/1
+136:0/0 137:0/2
+137:0/3 144:0/1
+137:0/0 140:0/0
+140:0/1 141:0/0
+140:0/2 142:0/0
+140:0/3 138:0/1
+144:0/2 139:1/0
+144:0/3 141:0/3
+141:1/1 142:1/1
+141:1/2 142:1/2
+141:0/1 143:0/1
+143:0/2 142:0/2
+142:0/3 138:0/3
+138:0/2 143:0/3
+139:0/0 143:0/0
+139:0/1 147:0/1
+139:0/2 148:0/1
+139:0/3 149:0/1
+138:1/1 145:0/1
+138:1/2 146:0/1
+145:0/3 146:0/3
+146:0/2 151:0/2
+146:1/1 147:0/2
+146:1/2 148:0/2
+146:1/3 150:0/2
+
+---------------| Image 
+Image name: VPNHubAndSpoke
+Image map: *Note for the 100ppi
+
+
+---------------| IPv4 Mapping
+
+https://youtu.be/68Raa0FWNkg?si=JKg7XYowyVIzJbDx
+
+@R1
+conf t
+ int tunnel 0
+  tun source e1/3
+  tun mode gre multipoint
+  ip add 172.16.10.1 255.255.255.0
+  no shut
+  ip nhrp network-id 1
+  tunnel key 8008
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast dynamic
+  ip mtu 1400
+  ip tcp adjust-mss 1360
+  no ip next-hop-self eigrp 1
+  no ip split-horizon eigrp 1
+  end
+  
+  
+-------| preconfig
+
+@All Devices
+conf t
+ no logging cons
+ no ip domain-lookup
+ line cons 0
+  no login
+  exec-timeout 0 0
+ line vty 0 4
+  no login
+  exec-timeout 0 0
+  transport input all
+  end
+wr
+
+@HQ-A
+conf t
+ hostname HeadQuarters-A
+ int lo 0
+  ip add 10.100.10.1 255.255.255.0
+ int lo10
+  ip add 192.168.100.1 255.255.255.0
+ int e0/0
+  ip add 100.0.1.17 255.255.255.252
+  no shut
+ router ospf 1
+  router-id 10.100.10.1
+  network 10.100.10.1 0.0.0.255 area 1
+  network 192.168.100.1 0.0.0.255 area 1
+  network 100.0.1.17 0.0.0.3 area 1
+  end
+wr
+
+@HQ-B
+conf t
+ hostname HeadQuarters-B
+ int lo 0
+  ip add 10.200.20.1 255.255.255.0
+ int lo10
+  ip add 192.168.200.1 255.255.255.0
+ int e0/0
+  ip add 200.0.1.17 255.255.255.252
+  no shut
+ router eigrp 200
+  router-id 10.200.20.1
+  network 10.200.20.1 0.0.0.255
+  network 192.168.200.1 0.0.0.255
+  network 200.0.1.17 0.0.0.3
+  end
+wr
+
+@PE-1
+conf t
+ hostname PE-1
+ int lo0
+  ip add 12.1.1.1 255.255.255.255
+ int e0/0
+  ip add 10.8.2.1 255.255.255.224
+  no shut
+ int e0/1
+  ip add 100.0.1.18 255.255.255.252
+  no shut
+ int e0/2
+  ip add 200.0.1.18 255.255.255.252
+  no shut
+ int e0/3
+  ip add 12.8.2.129 255.255.255.252
+  no shut
+  end
+wr
+
+@PE-2
+conf t
+ hostname PE-2
+ int lo0
+  ip add 12.2.2.2 255.255.255.255
+ int e0/1
+  ip add 12.8.2.33 255.255.255.224
+  no shut
+ int e0/2
+  ip add 12.8.2.65 255.255.255.224
+  no shut
+ int e0/3
+  ip add 12.8.2.141 255.255.255.252
+  no shut
+ int e1/1
+  ip add 6.122.12.25 255.255.255.248
+  no shut
+ int e1/2
+  ip add 21.201.2.81 255.255.255.248
+  no shut
+  end
+wr
+
+@PE-3
+conf t
+ hostname PE-3
+ int lo0
+  ip add 12.3.3.3 255.255.255.255
+  no shut
+ int e0/0
+  ip add 12.8.2.97 255.255.255.248
+  no shut
+ int e0/1
+  ip add 100.1.1.254 255.255.255.0
+  no shut
+ int e0/2
+  ip add 100.2.1.254 255.255.255.0
+  no shut
+ int e0/3
+  ip add 100.3.1.254 255.255.255.0
+  no shut
+ int e1/0
+  ip add 12.8.2.137 255.255.255.252
+  no shut
+  end
+
+@RR
+conf t
+ hostname RouteReflector
+ int lo0
+  ip add 12.12.12.12 255.255.255.255
+ int lo3
+  ip add 12.8.3.1 255.255.255.0
+ int lo4
+  ip add 12.8.4.1 255.255.255.0
+ int lo5
+  ip add 12.8.5.1 255.255.255.0
+ int e0/1
+  ip add 12.8.2.130 255.255.255.252
+  no shzut
+ int e0/2
+  ip add 12.8.2.138 255.255.255.252
+  no shut
+ int e0/3
+  ip add 12.8.2.134 255.255.255.252
+  no shut
+  end
+wr
+
+
+@C1
+conf t
+ int lo0
+  ip add 12.10.10.10 255.255.255.255
+ int e0/0
+  ip add 10.8.2.30 255.255.255.224
+  no shut
+ int e0/1
+  ip add 12.8.2.145 255.255.255.252
+  no shut
+ int e0/2
+  ip add 12.8.2.153 255.255.255.252
+  no shut
+ int e0/3
+  ip add 12.8.2.33 255.255.255.224
+  no shut
+  end
+
+@C2
+conf t
+ int lo0
+  ip add 12.20.20.20 255.255.255.255
+ int 
