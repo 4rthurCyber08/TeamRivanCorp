@@ -178,12 +178,18 @@ conf t
  ip host dns.google.com 8.8.8.8 
  ip host core35e03.google.com 35.3.5.5 
  ip host core25e02.google.com 25.2.5.5 
- ip host core45e01.google.com 45.4.5.5 
+ ip host core45e01.google.com 45.4.5.5
+ !
+ ipv6 unicast-routing
+ end
+wr
 
 
 !@P1
 conf t
  hostname P1
+ int e0/0
+  ipv6 add 10:2:1:12::b00b/64
  end
 wr
 
@@ -284,9 +290,12 @@ conf t
   sw mo tr
   !sw tr allowed vlan 1-199
   exit
+ int lo1
+  ipv6 add fec0::11:1/122
  int e1/1
   no sw
   ip add 10.1.4.6 255.255.255.252
+  ipv6 add 2026::2:2/122
   exit
  int range e2/0-3,e3/0-3
   shut
@@ -302,14 +311,17 @@ conf t
   exit
  int vlan 10
   ip add 10.2.1.1 255.255.255.0
+  ipv6 add 10:2:1:12::1/64
   no shut
   exit
  int vlan 20
   ip add 10.2.2.1 255.255.255.0
+  ipv6 add 10:2:2:12::1/64
   no shut
   exit
  int vlan 100
   ip add 192.168.1.129 255.255.255.224
+  ipv6 add 2026::3:1/122
   no shut
   exit
  vtp version 2
@@ -330,9 +342,12 @@ conf t
   sw mo tr
   !sw tr allowed vlan 1-199
   exit
+ int lo2
+  ipv6 add fec0::22:2/122
  int e1/1
   no sw
   ip add 10.1.4.10 255.255.255.252
+  ipv6 add 10:1:4:24::2/64
   exit
  int range e2/0,e2/2-3,e3/0-3
   shut
@@ -348,14 +363,17 @@ conf t
   exit
  int vlan 10
   ip add 10.2.1.2 255.255.255.0
+  ipv6 add 10:2:1:12::2/64
   no shut
   exit
  int vlan 20
   ip add 10.2.2.2 255.255.255.0
+  ipv6 add 10:2:2:12::2/64
   no shut
   exit
  int vlan 100
   ip add 192.168.1.130 255.255.255.224
+  ipv6 add 2026::3:2/122
   no shut
   exit
  vtp version 2
@@ -374,12 +392,17 @@ wr
 !@R4
 conf t
  hostname R4
+ int lo4
+  ip add 4.4.4.4 255.255.255.255
+  ipv6 add fec0::4:4/122
  int e1/0
   ip add 10.1.4.5 255.255.255.252
+  ipv6 add 2026::2:1/122
   no shut
   exit
  int e1/1
   ip add 10.1.4.9 255.255.255.252
+  ipv6 add 10:1:4:24::4/64
   no shut
   exit
  int e1/2
@@ -393,8 +416,12 @@ wr
 !@R3
 conf t
  hostname R3
+ int lo3
+  ip add 3.3.3.3 255.255.255.255
+  ipv6 add fec0:3::3/122
  int e1/1
   ip add 10.1.1.6 255.255.255.252
+  ipv6 add 2026::1:2/122
   no shut
   exit
  int e1/2
@@ -408,12 +435,17 @@ wr
 !@R2
 conf t
  hostname R2
+ int lo2
+  ip add 2.2.2.2 255.255.255.255
+  ipv6 add fec0:2::2/122
  int e1/1
   ip add 10.1.1.5 255.255.255.252
+  ipv6 add 2026::1:1/122
   no shut
   exit
  int e1/2
   ip add 10.1.1.2 255.255.255.252
+  ipv6 add 2026::12:2/122
   no shut
   exit
  end
@@ -423,20 +455,27 @@ wr
 !@R1
 conf t
  hostname R1
+ int lo1
+  ip add 1.1.1.1 255.255.255.255
+  ipv6 add fec0:1::1/122
  int e1/0
   ip add 10.1.1.1 255.255.255.252
+  ipv6 add 2026::12:1/122
   no shut
   exit
  int e1/1
   ip add 208.8.8.1 255.255.255.0
+  ipv6 add b:1:11:b::1/64
   no shut
   exit
  int e1/2
   ip add 207.7.7.1 255.255.255.0
+  ipv6 add b:1:22:b::1/64
   no shut
   exit
  int e1/3
   ip add 209.9.9.1 255.255.255.0
+  ipv6 add b:1:33:b::1/64
   no shut
   exit
  end
@@ -450,16 +489,21 @@ conf t
   ip add 33.33.33.33 255.255.255.255
   no shut
   exit
+ int lo3
+  ipv6 add b33::1/128
  int e1/1
   ip add 35.3.5.3 255.255.255.0
+  ipv6 add b:3:4:b::3/64
   no shut
   exit
  int e1/2
   ip add 32.3.2.3 255.255.255.0
+  ipv6 add b:1:2:b::3/64
   no shut
   exit
  int e1/3
   ip add 209.9.9.3 255.255.255.0
+  ipv6 add b:1:33:b::3/64
   no shut
   exit
  end
@@ -473,20 +517,26 @@ conf t
   ip add 22.22.22.22 255.255.255.255
   no shut
   exit
+ int lo2
+  ipv6 add b22::1/128
  int e0/2
   ip add 25.2.5.2 255.255.255.0
+  ipv6 add b:2:4:b::2/64
   no shut
   exit
  int e1/1
   ip add 24.2.4.2 255.255.255.0
+  ipv6 add b:2:1:b::2/64
   no shut
   exit
  int e1/2
   ip add 32.3.2.2 255.255.255.0
+  ipv6 add b:1:2:b::2/64
   no shut
   exit
  int e1/3
   ip add 207.7.7.2 255.255.255.0
+  ipv6 add b:1:22:b::2/64
   no shut
   exit
  end
@@ -498,29 +548,37 @@ conf t
  hostname ISP1-CONVERGE
  int lo0
   ip add 44.44.44.44 255.255.255.255
-  no shut
   exit
+ int lo1
+  ipv6 add b44::1/128
  int e1/1
   ip add 24.2.4.4 255.255.255.0
+  ipv6 add b:2:1:b::4/64
   no shut
   exit
  int e1/2
   ip add 45.4.5.4 255.255.255.0
+  ipv6 add b:1:4:b::4/64
   no shut
   exit
  int e1/3
   ip add 208.8.8.4 255.255.255.0
+  ipv6 add b:1:11:b::4/64
   no shut
   exit
  end
 wr
 
 
-!@ISP4
+!@Google
 conf t
  hostname GoogleDNS
+ int lo4
+  ipv6 add b55::1/128
  int lo8
   ip add 8.8.8.8 255.255.255.255
+  ipv6 add 8:8:8:8::8888/128
+  ipv6 add 2001:4860:4860::8844/128
   no shut
   exit
  int lo0
@@ -529,14 +587,17 @@ conf t
   exit
  int e0/1
   ip add 45.4.5.5 255.255.255.0
+  ipv6 add b:1:4:b::5/64
   no shut
   exit
  int e0/2
   ip add 25.2.5.5 255.255.255.0
+  ipv6 add b:2:4:b::5/64
   no shut
   exit
  int e0/3
   ip add 35.3.5.5 255.255.255.0
+  ipv6 add b:3:4:b::5/64
   no shut
   exit
  end
