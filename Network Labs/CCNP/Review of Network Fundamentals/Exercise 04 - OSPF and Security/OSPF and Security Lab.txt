@@ -1,0 +1,83 @@
+Review Exercise 04
+OSPF and Security Lab
+
+For Accessing Devices
+
+ Device 	Port
+ P1		 	2165
+ S1 	 	2166
+ S2 	 	2167
+ D1 	 	2168
+ R1 	 	2169
+ R2 	 	2170
+ R3 		2171
+ R4 		2172
+ R5 		2173
+ R6 		2174
+ S3 		2175
+ S4 		2176
+ 
+ 
+TASKS
+
+1. Configure DHCP Snooping on the unused ports on D1
+2. TShoot OSPF
+3. 
+
+
+###########
+
+PRECONFIGURATIONS
+
+Name: Review Exercise 04
+Desc: OSPF and Security Lab
+
+***
+
+Netmap:
+
+P1	 	165
+S1  	166
+S2  	167
+D1  	168
+R1  	169
+R2  	170
+R3	 	171
+R4	 	172
+R5	 	173
+R6	 	174
+S3	 	175
+S4	 	176
+ 
+
+168:0/0 165:0/0
+168:0/1 166:0/2
+168:0/2 167:0/3
+168:0/3 169:0/0
+168:1/0 170:0/0
+168:1/1 171:0/0
+168:1/2 172:0/0
+
+173:0/0 169:0/1
+173:0/1 170:0/2
+173:0/3 175:0/0
+
+174:0/0 171:0/1
+174:0/1 172:0/2
+174:0/3 176:0/0
+
+
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+wr

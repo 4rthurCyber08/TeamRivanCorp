@@ -1,0 +1,80 @@
+Review Exercise 05
+LACP, TShoot, Routing Lab
+
+For Accessing Devices
+
+ Device 	Port
+ D1 	 	2195
+ D2 	 	2196
+ R1 	 	2197
+ R2 	 	2198
+ P1 	 	2199
+ S1 		2200
+ I1 		2201
+ I2 		2202
+ I3 		2203
+ 
+ 
+TASKS
+
+1. Configure DHCP Snooping on the unused ports on D1
+2. TShoot OSPF
+3. 
+
+
+###########
+
+PRECONFIGURATIONS
+
+Name: Review Exercise 05
+Desc: LACP, TShoot, Routing Lab
+
+***
+
+Netmap:
+
+ D1 	 	195
+ D2 	 	196
+ R1 	 	197
+ R2 	 	198
+ P1 	 	199
+ S1 		200
+ I1 		201
+ I2 		202
+ I3 		203
+ 
+
+196:0/0 199:0/0
+196:1/0 198:0/2
+
+196:0/1 195:0/1
+196:0/2 195:0/2
+196:0/3 195:0/3
+
+198:0/1 195:1/0
+198:0/0 202:0/0
+
+197:0/0 195:0/0
+197:0/1 200:0/0
+197:0/2 201:0/1
+197:0/3 201:0/2
+
+201:0/0 202:0/1
+
+203:0/1 201:0/3
+203:0/2 202:0/3
+
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+wr

@@ -1,0 +1,751 @@
+Exercise 01
+STP, Trunk, LACP, TShoot Lab
+
+For Accessing Devices
+
+ Device 	Port
+ P1		 	2177
+ P2 	 	2178
+ P3 	 	2179
+ P4 	 	2180
+ C1 	 	2181
+ C2 	 	2182
+ A1 		2183
+ A2 		2184
+ D1 		2185
+
+ 
+TASKS
+
+VLANs are configured on CoreSwitches.
+The link between Core Switches failed and cables were recently replaced.
+Complete the following tasks for the network to be operational:
+
+1. Configure the VLANs with their appropriate name on A1, A2, and D1, then assign PCs to the correct VLAN.
+
+2. Configure 802.1q trunk on the links between A1, A2, and D1.
+	- VLAN Main must be the untagged VLAN within the specified links.
+	- Any unnecessary VLAN must not be permitted from flowing on any unnecessary link.
+
+3. Set all PCs as DHCP clients in order for them to obtain IP addresses from C1.
+
+4. Configure and TShoot the link between C1 and C2 as a LACP Etherchannel.
+	- C1 must negotiate forming an etherchannel.
+	- C2 must not negotiate but will form a LACP etherchannel when it recieves LACPDUs.
+
+5. Configure 802.1q trunk on the port-channel configured between C1 and C2.
+	- VLAN Main must be the untagged VLAN within the link.
+	- Allow only the VLANs displayed in the topology.
+
+6. Configure Aggressive Unidirectional Link Detection on the link between C1 and C2
+	- Set the message interval to 20s
+	- Set the timeout interval to 8s
+
+7. Configure RSTP on A1, A2, D1 and C2.
+	- Configure C1 as the root bridge for VLAN FIN, and C2 as the secondary.
+	- Configure C2 as the root bridge for VLAN SEC, and C1 as the secondary.
+	- Make sure the pathcost uses 32 bit based values.
+	- Set the maximum number of switches for VLAN FIN and SEC to 3
+	
+8. Configure the ports connected to PCs for portfast so that it will go up with no downtime after connecting with a device
+	- Make sure the ports will lose its portfast status when it recieves a BPDU to avoid loops.
+
+9. Configure Uplink fast on the appropriate switch.
+
+10. Configure Backbonefast on all switches.
+
+11. Apply an IP address on D1's e1/1-3 interfaces with the following IP:
+	- e1/1: 10.0.1.1 /24
+	- e1/2: 10.0.2.1 /26
+	- e1/3: 10.0.3.1 /29
+
+12. Configure C1 for routing so that PCs of different VLANs can ping each other.
+
+
+*NOTE: 
+ - Do NOT modify or delete VTP on any device.
+ - C1 is innaccessible only via console, and is preconfigured to be a dhcp server and gateway for VLANs FIN and SEC.
+ - The company requires only the designated VLANs to be configured on their respective switches and permitted across any links between switches for security purposes.
+ - You are permitted to only use the port-channel range of 10 - 12. It does not mean some are not in use.
+ - All CoreSwitches are configured for SSH access and have the following accounts:
+	Username: net4ccess
+	Password: s3cr3t
+	
+	Username: f1nance
+	Password: h1dden
+	
+	You are permitted to make use of them.
+
+
+SOLUTION
+
+1. Configure the VLANs with their appropriate name on A1, A2, and D1, then assign PCs to the correct VLAN.
+
+Since we don't know the VLAN ID for either VLAN SEC or FIN, we will have to use the "show vlan brief" command on C2 since it is specified that core switches are configured with VLANs.
+
+@C2
+show vlan brief
+
+We find out that: 
+	VLAN SEC = 48
+	VLAN FIN = 22
+	
+Now we need to create and assign only the necessary VLANs on the other switches as specified in the instructions.
+	- The company requires only the designated VLANs to be configured on their respective switches and permitted across any links between switches for security purposes.
+
+@A1
+conf t
+ vlan 22
+  name FIN
+ int e0/1
+  switchport mode access
+  switchport access vlan 22
+  end
+!
+!- there's no need to assign vlan SEC on A1 since no end device on A1 belongs to VLAN SEC.
+
+
+@A2
+conf t
+ vlan 22
+  name FIN
+ vlan 48
+  name SEC
+ int e0/1
+  switchport mode access
+  switchport access vlan 48
+  end
+!
+!- We need to assign both VLAN SEC & FIN on A2 because a device connected on D1, P4, will need to communicate with P1. So VLAN FIN traffic needs to be transmitted on A2.
+
+@D1
+conf t
+ vlan 22
+  name FIN
+ vlan 48
+  name SEC
+ int e0/1
+  switchport mode access
+  switchport access vlan 48
+ int e0/2
+  switchport mode access
+  switchport access vlan 22
+  end
+
+Verify: Use the show command "show vlan brief" to check if all interfaces belong to the correct vlans.
+
+@A1, A2, D1
+show vlan brief
+
+
+
+
+2. Configure 802.1q trunk on the links between A1, A2, and D1.
+	- VLAN Main must be the untagged VLAN within the specified links.
+	- Any unnecessary VLAN must not be permitted from flowing on any unnecessary link.
+
+Based on the topology, the interfaces that connects the switches is not shown. 
+In order to obtain this information, we can use the "show cdp neighbors" command
+
+@A1,A2,D1
+show cdp neighbor
+
+We find out about the connections between the switches:
+A1 e0/0 - e0/2 A2
+A2 e0/3 - e0/0 D1
+D1 e0/3 - e0/0 C1
+D1 e1/0 - e0/0 C2
+C1 e0/1 - e0/1 C2
+C1 e0/2 - e0/2 C2
+C1 e0/3 - e0/3 C2
+
+
+Now that we know about the connections we can start configuring trunk links.
+Start by using the show command "show int trunk" to verify any existing configurations.
+
+@A1, A2, D1
+show interface trunk
+
+We find out that there's no config between the links on A1, A2, and D1, it's safe to make configurations without risking overwriting. 
+	
+The link between D1 and A2 will need only VLAN SEC and FIN to be allowed. As both vlan need to be transmitted on the link in order for PCs to communicate.
+	- We knew that VLAN MAIN is VLAN 72 when we used the show command "show vlan brief" from C2.
+
+@D1
+conf t
+ !- since we don't have vlan main configured yet, simply create it.
+ vlan 72
+  name MAIN
+ int e0/0
+  switchport trunk encapsulation dot1q
+  switchport mode trunk
+  switchport trunk allowed vlan 22,48
+  switchport trunk native vlan 72
+  end
+
+@A2
+conf t
+ vlan 72
+  name MAIN
+ int e0/3
+  switchport trunk encapsulation dot1q
+  switchport mode trunk
+  switchport trunk allowed vlan 22,48
+  switchport trunk native vlan 72
+  end
+
+
+On the link between A1 & A2, we need only to allow VLAN FIN because there is no end device on A1 that belongs to VLAN SEC. 
+Therefore VLAN SEC does not need to be transmitted on the link.
+
+@A1
+conf t
+ vlan 72
+  name MAIN
+ int e0/0
+  switchport trunk encapsulation dot1q
+  switchport mode trunk
+  switchport trunk allowed vlan 22
+  switchport trunk native vlan 72
+  switchport trunk pruning vlan 48
+  !
+  !- since there is no reason for VLAN SEC to be transmitted on this link, we will also block it through VLAN Pruning
+  !- based on the instruction:
+  !- - Any unnecessary VLAN must not be permitted from flowing on any unnecessary link.
+  end
+
+@A2
+conf t
+ vlan 72
+  name MAIN
+ int e0/2
+  switchport trunk encapsulation dot1q
+  switchport mode trunk
+  switchport trunk allowed vlan 22
+  switchport trunk native vlan 72
+  switchport trunk pruning vlan 48
+  end
+
+
+Verify: Use the show command "show interface trunk".
+
+@A1,A2,D1
+show interface trunk
+
+
+3. Set all PCs as DHCP clients in order for them to obtain IP addresses from C1.
+
+Simply apply the "ip add dhcp" command to the PCs.
+
+@P1,P2,P3,P4
+conf t
+ int e0/0
+  no shut
+  ip add dhcp
+  end
+
+Verify: Use the "show ip interface" or "show ip interface | exclude unassigned" command.
+
+And PCs on the same VLAN should be able to ping each other. But PCs on different VLANs MUST NOT yet be able to ping each other.
+
+
+4. Configure and TShoot the link between C1 and C2 as a LACP Etherchannel.
+	- C1 must negotiate forming an etherchannel.
+	- C2 must not negotiate but will form a LACP etherchannel when it recieves LACPDUs.
+
+Since we don't have access to C1's console, we can instead SSH to it from any of the PCs or C2.
+But first we need to know the IP of C1.
+
+There's 2 ways we can do this, check the default-gateway of the PCs since it is specified that C1 is their gateway, or we can use CDP.
+
+For using default gateway:
+@Any PCs
+sh ip route
+
+We discover that C1s SVI for VLAN FIN is 10.1.22.1, while VLAN SEC is 10.1.48.1
+
+
+For using CDP:
+@D1
+show cdp entry C1.ccnp.com
+!
+!- C1.ccnp.com is the Device ID indicated on the "show cdp neighbor" command.
+!- You will find various info about the specified device, including its management/IP address.
+
+
+Now that we know C1's IP, use SSH to gain access to it. 
+Do this from one of the PCs since they are the ones with IP addresses.
+	Note: You cannot remotely connect to devices without any IPs, specifically A1, A2, and D1.
+
+Simply SSH to the gateway indicated on the PC.
+@P1
+ssh -l net4ccess 10.1.22.1
+ !-> Password: s3cr3t
+
+Now that we have access to C1 we can begin configuring/troubleshooting the link.
+
+First we need to verify the existing configurations.
+
+@C1,C2
+show etherchannel summary
+show run
+
+Through the "show etherchannel summary" command we find out that C1 and C2 already have Port-Channels 10 and 12 configured
+
+We were permitted to only use Port-Channels 10-12, which means we can only use 11.
+It's important to verify existing configs first, otherwise we might overwrite any existing configs and possibly ruin the network.
+
+@C1
+conf t
+ int range e0/1-3 
+  !
+  !- Mode must be active as specified in the instructions.
+  !
+  channel-group 11 mode active
+  channel-protocol lacp
+  no shut
+  end
+
+@C2
+conf t
+ int range e0/1-3
+  !
+  !- Mode must be passive so that it does not negotiate but will still form a LACP etherchannel.
+  !
+  channel-group 11 mode active
+  channel-protocol lacp
+  no shut
+  end
+
+
+Verify: Use the "show etherchannel summary" command. 
+Ignore Port-channels 10 and 12.
+
+@C1,C2
+show etherchannel summary
+
+Port-channel 11 must be tagged with (SU) indicating it is operational and in use.
+
+
+5. Configure 802.1q trunk on the port-channel configured between C1 and C2.
+	- VLAN Main must be the untagged VLAN within the link.
+	- Allow only the VLANs displayed in the topology.
+
+We can either use the interface range command, or much preferably the interface port-channel command to configure the trunk link.
+
+@C1,C2
+conf t
+ int po11
+  switchport trunk encapsulation dot1q
+  switchport mode trunk
+  switchport trunk allowed vlan 22,48
+  switchport trunk native vlan 72
+  end
+
+
+Any configurations applied to the port-channel will also be sent to all the bundled interfaces within that port-channel.
+
+Verify: Use the "show run" command to check the interfaces e0/1, e0/2, and e0/3 if they recieve the configs we applied to the port-channel.
+Also use the "show interface trunk" command.
+
+
+@C1,C2
+show run
+show interface trunk
+
+
+6. Configure Aggressive Unidirectional Link Detection on the links between C1 and C2
+	- Set the message interval to 20s
+
+UDLD can not be configured on port-channel interface, which means we need the interface range command to apply it per interface.
+
+@C1,C2
+conf t
+ int range e0/1-3
+  udld port aggressive
+  exit
+ !
+ !- set message interval to 20s
+ !
+ udld message time 20
+ end
+  
+Verify: Use the "show udld neighbor" or "show udld ethernet" command
+
+@C1,C2
+show udld neighbor
+show udld ethernet 0/1
+
+
+7. Configure RSTP on A1, A2, D1 and C2.
+	- Configure C1 as the root bridge for VLAN FIN, and C2 as the secondary.
+	- Configure C2 as the root bridge for VLAN SEC, and C1 as the secondary.
+	- Make sure the pathcost uses 32 bit based values.
+	- Set the maximum number of switches for VLAN FIN and SEC to 3
+
+First, check the current stp mode on the device
+
+@C1,C2,A1,A2,D1
+show spanning-tree
+
+We find out that C1 is already using rapid-pvst while the rest uses the standard stp (802.1d)
+
+@A1,A2,D1,C2
+conf t
+ spanning-tree mode rapid-pvst
+ end
+ 
+Now that all switches use rapid-pvst let's set the root bridge.
+
+@C1
+conf t
+ spanning-tree vlan 22 root primary diameter 3
+ spanning-tree vlan 48 root secondary diameter 3
+ !
+ !- the diameter keyword will specify the maximum number of switches from the root bridge
+ !
+ spanning-tree pathcost method long
+ end
+ 
+@C2
+conf t
+ spanning-tree vlan 22 root secondary diameter 3
+ spanning-tree vlan 48 root primary diameter 3
+ spanning-tree pathcost method long
+ end
+
+Verify: Use the "show spanning-tree vlan" command and specify the vlan you wish to check.
+
+@C1,C2
+show spanning-tree vlan 22
+show spanning-tree vlan 48
+
+
+8. Configure the ports connected to PCs for portfast so that it will go up with no downtime after connecting with a device
+	- Make sure the ports will lose its portfast status when it recieves a BPDU to avoid loops.
+
+@A1, A2, D1
+conf t
+ int e0/1
+  spanning-tree portfast edge
+  end
+
+@D1
+conf t
+ int e0/2
+  spanning-tree portfast edge
+  end
+  
+
+9. Configure Uplink fast on the appropriate switch.
+
+Uplinkfast is configured on switches that has more than one link leading to the root bridge.
+In this case it is D1.
+
+@D1
+conf t
+ spanning-tree uplinkfast
+ end
+
+
+10. Configure Backbonefast on all switches.
+
+@A1,A2,D1,C1,C2
+conf t
+ spanning-tree backbonefast
+ end
+
+
+11. Apply an IP address on D1's e1/1-3 interfaces with the following IP:
+	- e1/1: 10.0.1.1 /24
+	- e1/2: 10.0.2.1 /26
+	- e1/3: 10.0.3.1 /29
+
+To apply an ip address to a switch's non-SVI interface, we need to use the "no switchport" command to turn it into a routing port.
+This is only aplicable to Multilayer or L3 Switches. 
+
+@D1
+conf t
+ int range e1/1-3 
+  no sw
+ int e1/1
+  ip add 10.0.1.1 255.255.255.0
+  no shut
+ int e1/2
+  ip add 10.0.2.1 255.255.255.192
+  no shut
+ int e1/3
+  ip add 10.0.3.1 255.255.255.248
+  no shut
+  end
+
+
+12. Configure C1 for routing so that PCs of different VLANs can ping each other.
+
+@C1
+conf t
+ ip routing
+ end
+
+Verify: Make PCs of different vlans ping each other.
+
+@P1
+ping 10.1.48.101
+
+Ping must be successful.
+
+
+Save Configurations: DO THIS ONLY ON THE EXAM
+
+@All Devices
+copy run start
+
+
+###########
+
+PRECONFIGURATIONS
+
+Name: Exercise 01
+Desc: STP, Trunk, LACP TShoot Lab
+
+***
+
+Netmap:
+
+P1    177
+P2    178
+P3    179
+P4    180
+C1    181
+C2    182
+A1    183
+A2    184
+D1    185
+
+177:0/0 183:0/1
+178:0/0 184:0/1
+179:0/0 185:0/1
+180:0/0 185:0/2
+
+184:0/2 183:0/0
+184:0/3 185:0/0
+
+185:0/3 181:0/0
+185:1/0 182:0/0
+
+181:0/1 182:0/1
+181:0/2 182:0/2
+181:0/3 182:0/3
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+wr
+
+
+@C1, C2
+conf t
+ enable secret rivanC1sc0123
+ banner motd '
+
+Password: rivanC1sc0123
+
+'
+ no ip http server
+ no ip http secure-server
+ service password-encryption
+ ip domain-name ccnp.com
+ username net4ccess privilege 15 secret s3cr3t
+ username f1nance privilege 15 secret h1dden
+ ip routing
+ crypto key generate rsa modulus 1024 label labkey
+ ip ssh version 2
+ line vty 0 4
+  transport input ssh
+  login local
+  exec-timeout 0 0
+  end
+wr
+
+
+@D1, A1, A2
+conf t
+ vtp mode transparent
+ no ip http server
+ no ip http secure-server
+ end
+wr
+
+
+@P1
+conf t
+ hostname P1
+ end
+wr
+
+
+@P2
+conf t
+ hostname P2
+ end
+wr
+
+
+@P3
+conf t
+ hostname P3
+ end
+wr
+
+
+@P4
+conf t
+ hostname P4
+ end
+wr
+
+
+@A1
+conf t
+ hostname A1
+ end
+wr
+
+
+@A2
+conf t
+ hostname A2
+ end
+wr
+
+
+@D1
+conf t
+ hostname D1
+ int range e0/3,e1/0
+  sw trunk encaps dot
+  sw mo tr
+  sw tr allowed vlan 12,22,48 
+  sw tr nativ vlan 72
+ end
+wr
+
+
+@C1
+conf t
+ hostname C1
+ vlan 12
+  name AVAILABLE
+ vlan 14
+  name REDTEAM
+ vlan 15
+  name BLUETEAM
+ vlan 22
+  name FIN
+ vlan 32
+  name ADMIN
+ vlan 48
+  name SEC
+ vlan 72
+  name MAIN
+ vlan 112
+  name VOIP
+ int vlan 22
+  ip add 10.1.22.1 255.255.255.0
+  no shut
+ int vlan 48
+  ip add 10.1.48.1 255.255.255.0
+  no shut
+ int vlan 72
+  ip add 10.1.72.1 255.255.255.0
+  no shut
+ !
+ int range e1/0-1
+  shut
+  channel-group 10 mode passive
+  channel-protocol lacp
+ int range e1/2-3
+  shut
+  channel-group 12 mode passive
+  channel-protocol lacp
+ ! 
+ int e0/0
+  sw trunk encaps dot
+  sw mo tr
+  sw tr allowed vlan 12,22,48 
+  sw tr nativ vlan 72
+ !
+ spanning-tree mode rapid
+ vtp mode transparent
+ no ip routing
+ !
+ ip dhcp excluded-address 10.1.22.1 10.1.22.100
+ ip dhcp excluded-address 10.1.48.1 10.1.48.100
+ ip dhcp pool finpool
+  network 10.1.22.0 255.255.255.0
+  default-router 10.1.22.1
+ ip dhcp pool secpool
+  network 10.1.48.0 255.255.255.0
+  default-router 10.1.48.1
+  end
+wr
+
+ 
+@C2
+conf t
+ hostname C2
+ vlan 12
+  name AVAILABLE
+ vlan 14
+  name REDTEAM
+ vlan 15
+  name BLUETEAM
+ vlan 22
+  name FIN
+ vlan 32
+  name ADMIN
+ vlan 48
+  name SEC
+ vlan 72
+  name MAIN
+ vlan 112
+  name VOIP
+ int vlan 22
+  ip add 10.1.22.254 255.255.255.0
+  no shut
+ int vlan 48
+  ip add 10.1.48.254 255.255.255.0
+  no shut
+ int vlan 72
+  ip add 10.1.72.254 255.255.255.0
+  no shut
+  exit
+ vtp mode transparent
+ !
+ int e0/0
+  sw trunk encaps dot
+  sw mo tr
+  sw tr allowed vlan 12,22,48 
+  sw tr nativ vlan 72
+ !
+ int range e1/0-1
+  shut
+  channel-group 10 mode passive
+  channel-protocol lacp
+ int range e1/2-3
+  shut
+  channel-group 12 mode passive
+  channel-protocol lacp
+ !
+ end
+wr

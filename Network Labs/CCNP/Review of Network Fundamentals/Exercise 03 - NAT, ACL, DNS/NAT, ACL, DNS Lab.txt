@@ -1,0 +1,96 @@
+Exercise 03
+NAT, ACL, DNS Lab
+
+For Accessing Devices
+
+ Device 	Port
+ P1		 	2186
+ P2 	 	2187
+ P3 	 	2188
+ P4 	 	2189
+ R1 	 	2190
+ R2 	 	2191
+ R3 		2192
+ R4 		2193
+ I1 		2194
+
+ 
+TASKS
+
+Do not remove any BGP configurations
+
+1. Configure NAT on R1, R2, R3, and R4 to allow PCs to ping the loopback IP of I1
+	- Configure an ACL named site3nat that permits only all Class B IPv4 address to the internet.
+	- Configure NAT on R1 using a NAT pool name site1nat
+	- Configure NAT on R2 with an ACL that allows only 
+
+2. Configure I1 as a DNS server
+	- Set R1's public IP as siteA.com
+	- Set R2's public IP as siteB.com
+	- Set R3's public IP as siteC.com
+	- Set R4's public IP as siteD.com
+
+3. Configure All routers and PCs to have I1 as their DNS Server
+
+4. Configure an ACL on R3 to block the following
+	- HTTP from R2
+	- ICMP from R1
+	- Telnet from R4
+	- Finger from R1
+	- Daytime from R2
+	- NTP from R1
+	- DNS from R4
+
+5. Configure an account on P2 and allow all remote connections
+
+6. Configure Port forwarding on R2 that will allow telnet connections to be forwarded to P2.
+
+7. Configure a Standard ACL on R3 to deny remote connections.
+	- Do not use the transport input command to achieve this.
+
+8. TShoot the ACL on R1
+
+###########
+
+PRECONFIGURATIONS
+
+Name: Exercise 03
+Desc: NAT, ACL, DNS Lab
+
+***
+
+Netmap:
+
+P1    186
+P2    187
+P3    188
+P4    189
+R1    190
+R2    191
+R3    192
+R4    193
+I1    194
+
+194:0/0 190:0/0
+194:0/1 191:0/0
+194:0/2 192:0/1
+194:0/3 193:0/1
+
+190:0/1 186:0/0
+191:0/1 187:0/0
+192:0/0 188:0/0
+193:0/0 189:0/0
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+wr
