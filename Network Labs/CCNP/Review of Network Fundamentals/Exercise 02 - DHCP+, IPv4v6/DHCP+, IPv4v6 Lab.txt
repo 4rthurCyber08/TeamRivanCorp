@@ -16,17 +16,13 @@ For Accessing Devices
  
 TASKS
 
-VLANs are configured on CoreSwitches.
-The link between Core Switches failed and cables were recently replaced.
-Complete the following tasks for the network to be operational:
-
 1. Assign P1 and P2 to the correct VLAN.
 
 2. Based on D1's IPv4 and IPv6 address,
 	- Apply the last valid ipv4 address on D2's e0/0 interface.
 	- Apply the last valid IPv6 address that is not a reserved anycast on D2's e0/0 interface.
 
-3. Configure D1 as a DHCPv4 Server for VLAN MAIN and VLAN SEC.
+3. Configure D2 as a DHCPv4 Server for VLAN MAIN and VLAN SEC.
 	- VLAN MAIN:
 		+ Name the pool as mainpool
 		+ Exclude the first 50 IPs
@@ -36,41 +32,378 @@ Complete the following tasks for the network to be operational:
 	
 	- VLAN SEC
 		+ Name the pool as secp2pool
-		+ Reserve the IPv4 address, 10.0.67.25 /29, for P2.
+		+ Reserve the IPv4 address, 192.168.28.172 /29, for P2.
+		+ Set P2's e0/2 mac address as its client ID for IP reservation
 		+ Set the domain name to sec.labs
 		+ Set the gateway as D2
 		+ Set the lease time to 5 days and 12hrs
 
-4. Configure an IPv6 address on R1's e0/0 interface using EUI-64 that will allow it to ping D3 via IPv6.
+4. Configure P1 and P2 as DHCP Clients.
 
-5. Configure an IPv4 address on R1 that will allow it to reach D3's e0/0 interface.
+5. Configure an IPv6 address on R1's e0/0 interface using EUI-64 that will allow it to ping D3 via IPv6.
+
+6. Configure an IPv4 address on R1 that will allow it to reach D3's e0/0 interface.
 	
-6. Configure D3 as a DHCPv4 and Stateful DHCPv6 server for P3.
+7. Configure D3 as a DHCPv4 and Stateful DHCPv6 server for P3.
 	- IPv4
 		+ The network must be of the same subnet as R1's e0/2 interface
 		+ Reserve the first 100 IPs of the subnet.
 		+ Set R1 as the gateway
-		+ Set the domain name as ccnp.con
+		+ Set the domain name as ccnp.com
 		
 	- IPv6
-		+ Set R1 as the gateway
+		+ Set S1 as its DNS Server
 		+ The prefix must be based on R1's IPv6 address on its e0/2
 
-7. Configure R1 for DHCP Relay to allow P3 to obtain an IPv4 and IPv6 address.
+8. Configure R1 for DHCP Relay to allow P3 to obtain an IPv4 and IPv6 address.
 	
-8. Configure P3 as a DHCP client.
+9. Configure P3 as a DHCPv4 and DHCPv6 client.
 		
-9. Configure a static IPv4 and IPv6 routes that will allow D3 and D1 to reach each other's loopback 0 address.
+10. Configure a static IPv6 routes that will allow D3 and D1 to reach each other's loopback 0 address.
 	- Do not use dynamic addressing.
-	- Do not use a default route.
 
-10. Based on S1's IPv6 address, assign R1's e0/1 interface the last valid IPv6 address.
+11. Based on S1's IPv6 address, assign R1's e0/1 interface the last valid IPv6 address that is not a reserved anycast.
 
-11. Assign R1 as the gateway for S1, both IPv4 and IPv6.
 
 
 
 SOLUTION
+
+
+1. Assign P1 and P2 to the correct VLAN.
+
+Use the "show vlan brief" on D2 to check the VLAN ID of MAIN and SEC
+
+@D2
+show vlan brief
+
+We find out that VLAN MAIN is 15 and VLAN SEC is 28.
+
+@D2
+conf t
+ int e0/1
+  switchport mode access
+  switchport access vlan 15
+ int e0/2
+  switchport mode access
+  switchport access vlan 28
+  end
+
+
+2. Based on D1's IPv4 and IPv6 address,
+	- Apply the last valid ipv4 address on D2's e0/0 interface.
+	- Apply the last valid IPv6 address that is not a reserved anycast on D2's e0/0 interface.
+
+For IPv4
+
+	D1's IP: 10.1.1.65 /26
+	/26 is (4th Octet, 64i)
+	
+	/26 increments in 64 therefore:
+		1st Subnet = 10.1.1.0 /26
+		2nd Subnet = 10.1.1.64 /26
+		3rd Subnet = 10.1.1.128 /26
+
+	10.1.1.65 belongs to the second subnet of /26 and is the first valid IP.
+	
+	Network: 10.1.1.64 /26
+	First Valid (+1 to network): 10.1.1.65 /26
+	Last Valid (-1 to broadcast): 10.1.1.126 /26
+	Last IP/Broadcast (-1 to next network): 10.1.1.127 /26
+
+	Next Network: 10.1.1.128 /26
+
+
+For IPv6
+
+	D1's IP: fc01:0:1:2::1 /64 
+	/64 (4th field, 4th hex, 1i)
+	
+	/64 increments by 1 on the 4th hexadecimal on the 4th field.
+	
+	Expanded IPv6 address
+	
+		fc01 : 0000 : 0001 : 0002 : 0000 : 0000 : 0000 : 0001 /64
+	
+		4th field is :0002:
+		4th hex is 2
+		
+		If we break down the hexadecimal 2 in its binary form:
+			
+			2 = 0010
+			
+			Then we can determine the increment:
+			
+			8i	4i	2i	1i
+			0	0	1	0
+	
+	Therefore,
+		Network: fc01:0:1:2:: /64
+		First Valid: fc01:0:1:2::1 /64
+	
+	The reserved anycast is the last 128 IP address of any /64 network.
+	
+		Last Valid (Not Anycast): fc01:0:1:2:ffff:ffff:ffff:ff7f /64
+		Last IP/Anycast Range: fc01:0:1:2:ffff:ffff:ffff:ff80 /64 - fc01:0:1:2:ffff:ffff:ffff:ffff /64
+		
+@D2
+conf t
+ ipv6 unicast-routing
+ int e0/0
+  no switchport
+  ip add 10.1.1.126 255.255.255.0
+  ipv6 add fc01:0:1:2:ffff:ffff:ffff:ff7f/64
+  no shut
+  end
+ 
+Verify:
+
+@D2
+ping 10.1.1.65
+ping fc01:0:1:2::1
+
+
+3. Configure D2 as a DHCPv4 Server for VLAN MAIN and VLAN SEC.
+	- VLAN MAIN:
+		+ Name the pool as mainpool
+		+ Exclude the first 50 IPs
+		+ Set the domain name to main.labs
+		+ Set the gateway as D2
+		+ Set S1 as the TFTP Server
+
+Use the "show run" or "show run | inc interface | ip add" command on D1 and D2 to determine the network and IP of each VLAN on the respective switch.
+
+@D2
+show run | inc interface | ip add
+
+We find out that,
+	VLAN MAIN = 172.16.15.140 /25
+	VLAN SEC = 192.168.28.174 /29
+
+@D2
+conf t
+ ip dhcp excluded-address 172.16.15.129 172.16.15.179
+ ip dhcp pool mainpool
+  network 172.16.15.128 255.255.255.128
+  default-router 172.16.15.140
+  domain-name main.labs
+  option 150 ip 10.1.22.5
+  end
+  
+	- VLAN SEC
+		+ Name the pool as secp2pool
+		+ Reserve the IPv4 address, 192.168.28.172 /29, for P2.
+		+ Set P2's e0/2 mac address as its client ID for IP reservation
+		+ Set the domain name to sec.labs
+		+ Set the gateway as D2
+		+ Set the lease time to 5 days and 12hrs
+
+First we need to set P2's mac address for DHCP reservation.
+Use the "show interface" command on P2's e0/2 interface
+
+@P2
+show int e0/2
+
+We find that its mac address is aabb.cc00.a220. We must set this as the client identifier of the device.
+
+@P2
+conf t
+ int e0/2
+  ip dhcp client client-id hex aabbcc00a220
+  no shut
+  end
+
+Now we can setup DHCP for P2
+
+@D2
+conf t
+ ip dhcp pool secp2pool
+  client-identifier aabb.cc00.a220
+  host 192.168.28.172 255.255.255.248
+  default-router 192.168.28.174
+  domain-name sec.labs
+  lease 5 12
+  end
+
+4. Configure P1 and P2 as dhcp clients.
+
+@P1
+conf t
+ int e0/1
+  no shut
+  ip add dhcp
+  end
+
+@P2
+conf t
+ int e0/2
+  no shut
+  ip add dhcp
+  end
+  
+
+5. Configure an IPv6 address on R1's e0/0 interface using EUI-64 that will allow it to ping D3 via IPv6.
+
+@R1
+conf t
+ ipv6 unicast-routing
+ int e0/0
+  ipv6 add fc01:0:1:3::/64 eui-64
+  no shut
+  end
+
+Verify: Ping D3's IPv6 address.
+
+
+5. Configure an IPv4 address on R1 that will allow it to reach D3's e0/0 interface.
+
+Since D3's IP is a /30, this means there's only 2 valid IP addresses on this subnet.
+
+10.1.2.5 /30 (4th Octet, 4i)
+
+10.1.2.0 = 1st Subnet
+10.1.2.4 = 2nd Subnet
+10.1.2.8 = 3rd Subnet
+
+Network: 10.1.2.4 /30
+1st Valip: 10.1.2.5 /30
+Last Valid: 10.1.2.6 /30
+Last IP/Broadcast: 10.1.2.7 /30
+
+Next Network: 10.1.2.8 /30
+
+@R1
+conf t
+ int e0/0
+  ip add 10.1.2.6 255.255.255.252
+  no shut
+  end
+
+6. Configure R1 as the gateway for D3.
+
+@D3
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.1.2.6
+ end
+ 
+
+7. Configure D3 as a DHCPv4 and Stateful DHCPv6 server for P3.
+	- IPv4
+		+ The network must be of the same subnet as R1's e0/2 interface
+		+ Reserve the first 100 IPs of the subnet.
+		+ Set R1 as the gateway
+		+ Set the domain name as ccnp.com
+
+First, use the "show ip interface brief" or "show run | inc interface | ip add" command on R1 to identify the IP on its e0/2 interface.
+
+@R1
+show ip interface brief
+
+We find out that R1's e0/2 address is 172.16.41.1 /22
+
+@D3
+conf t
+ ip dhcp excluded-address 172.16.40.1 172.16.40.100
+ !- no name was specified for the dhcp pool, so we specify one ourselves
+ ip dhcp pool mypool
+  network 172.16.40.0 255.255.252.0
+  default-router 172.16.41.1
+  domain-name ccnp.com
+  end
+
+	- IPv6
+		+ Set S1 as its DNS Server
+		+ The prefix must be based on R1's IPv6 address on its e0/2
+
+Use the command "show run" or "show run | inc int | ipv6" to determine the ipv6 address of R1's e0/2 interface.
+
+@D3
+conf t
+ ipv6 dhcp pool mypoolv6
+  address prefix fd13:1:3::/78
+  dns-server fc02::1:1
+  exit
+ int e0/0
+  ipv6 dhcp server mypoolv6
+  ipv6 nd managed-config-flag
+  ipv6 nd prefix fd13:1:3::/78 no-autoconfig
+  end
+
+
+8. Configure R1 for DHCP Relay to allow P3 to obtain an IPv4 and IPv6 address.
+
+@R1
+conf t
+ int e0/2
+  ip helper-address 10.1.2.5
+  ipv6 dhcp relay destination fc01:0:1:3::1
+  end
+
+9. Configure P3 as a DHCPv4 and DHCPv6 client.
+		
+@P3
+conf t
+ int e0/3
+  no shut
+  ip add dhcp
+  ipv6 enable
+  ipv6 address dhcp
+  end
+  
+  
+10. Configure a static IPv6 routes that will allow D3 and D1 to reach each other's loopback 0 address.
+	- Do not use dynamic addressing.
+
+Since we are limited to static routing, we'll need to make sure every device between D3 and D1 knows how to reach both loopbacks. 
+Then we can resort to a default route on D1 and D3.
+
+First we need to know the IP address of the loopback of each device.
+
+@D1, D3
+sh ipv6 int br
+
+We find out that
+D1 Lo0 = FD33:0:1::1aa1 /64
+D3 Lo0 = FD33:0:3::3cc3 /64
+
+Also, make sure to determine the next-hop that will be used for each static route.
+
+@R1
+conf t
+ ipv6 route FD33:0:1::/64 2001:DB8::1
+ ipv6 route FD33:0:3::/64 FC01:0:1:3::1
+ end
+
+@D2
+conf t
+ ipv6 route FD33:0:1::/64 FC01:0:1:2::1
+ ipv6 route FD33:0:3::/64 2001:DB8::2
+ end
+
+@D1
+conf t
+ ipv6 route ::/0 FC01:0:1:2:FFFF:FFFF:FFFF:FF7F
+ end
+
+
+*NOTE D3 Static route will be different for you because of the EUI-64 config.
+
+@D3
+conf t
+ ipv6 route ::/0 FC01:0:1:3:A8BB:CCFF:FE00:A000
+ !
+ !- NOTE
+ !- FC01:0:1:3:A8BB:CCFF:FE00:A000 is an IP on R1's e0/0 int
+ !- since we configured it via EUI-64, your R1 IP will be different
+ end
+
+11. Based on S1's IPv6 address, assign R1's e0/1 interface the last valid IPv6 address that is not a reserved anycast.
+
+@R1
+conf t
+ int e0/1
+  ipv6 add fc02::1:7f/120
+  end
 
 
 ###########
@@ -124,41 +457,7 @@ conf t
  ipv6 unicast-routing
  no ip http server
  no ip http secure-server
- vlan 10
-  name ADMIN
- vlan 15
-  name MAIN
- vlan 28
-  name SEC
- vlan 56
-  name AVAILABLE
- vlan 68
-  name UNIT
- vlan 102
-  name SITE A
- vlan 104
-  name SITE B
- int vlan 10
-  ip add 10.0.10.33 255.255.255.224
-  no shut
- int vlan 15
-  ip add 172.16.15.129 255.255.255.128
-  no shut
- int vlan 28
-  ip add 192.168.28.169 255.255.255.248
-  no shut
- int vlan 56
-  ip add 10.3.56.1 255.255.255.240
-  no shut
- int vlan 68
-  ip add 10.4.68.129 255.255.255.192
-  no shut
- int vlan 102
-  ip add 10.5.101.10 255.255.252.0
-  no shut
- int vlan 104
-  ip add 10.6.104.46 255.255.255.252
-  no shut
+ vtp mode transparent
  int lo0
   ipv6 add fd33:0:1:0::1aa1/64
  int e0/0
@@ -166,7 +465,6 @@ conf t
   ip add 10.1.1.65 255.255.255.192
   ipv6 add fc01:0:1:2::1/64
   no shut
- vtp mode transparent
   end
 wr
 
@@ -178,6 +476,7 @@ conf t
  ipv6 unicast-routing
  no ip http server
  no ip http secure-server
+ vtp mode transparent
  vlan 10
   name ADMIN
  vlan 15
@@ -218,7 +517,6 @@ conf t
   ip add 10.21.1.1 255.255.255.252
   ipv6 add 2001:db8::1/126
   no shut
- vtp mode transparent
   end
 wr
 
@@ -226,7 +524,7 @@ wr
 conf t
  hostname R1
  int e0/1
-  ip add 10.1.2.6 255.255.255.252
+  ip add 10.1.22.6 255.255.255.252
   no shut
  int e0/2
   ip add 172.16.41.1 255.255.252.0
@@ -234,7 +532,7 @@ conf t
   no shut
  int e0/3
   ip add 10.21.1.2 255.255.255.252
-  ipv6 add 2001:db8::1/126
+  ipv6 add 2001:db8::2/126
   no shut
   end
 wr
@@ -279,5 +577,10 @@ wr
 @S1
 conf t
  hostname S1
+ ipv6 unicast-routing
+ int e0/1
+  ip add 10.1.22.5 255.255.255.252
+  ipv6 add fc02::1:1/120
+  no shut
  end
 wr
