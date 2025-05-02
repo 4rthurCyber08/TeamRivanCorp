@@ -4,7 +4,7 @@ DHCP+, IPv4v6 Lab
 For Accessing Devices
 
  Device 	Port
- D1		 	2157
+ D1		2157
  D2 	 	2158
  D3 	 	2159
  R1 	 	2160
