@@ -4,7 +4,7 @@ NAT, ACL, DNS Lab
 For Accessing Devices
 
  Device 	Port
- P1		 	2186
+ P1		2186
  P2 	 	2187
  P3 	 	2188
  P4 	 	2189
@@ -94,3 +94,73 @@ conf t
   exec-timeout 0 0
   end
 wr
+
+@P1
+conf t
+ int e0/0
+  ip add 10.1.2.13 255.255.255.252 
+  no shut
+  end
+
+@P2
+conf t
+ int e0/0
+  ip add 192.168.230.3 255.255.240.0
+  no shut
+  end
+
+@P3
+conf t
+ int e0/0
+  ip add 172.16.45.78 255.255.255.192
+  no shut
+  end
+
+@P4
+conf t
+ int e0/0
+  ip add 10.4.8.86 255.255.255.240
+  no shut
+  end
+
+@R1
+conf t
+ int e0/1
+  ip add 10.1.2.14 255.255.255.252
+  no shut
+ int e0/0
+  ip add 4.213.11.254 255.255.255.128
+  no shut
+  end
+
+@R2
+conf t
+ int e0/1
+  ip add 172.16.45.77 255.255.255.252
+  no shut
+ int e0/0
+  ip add 19.211.163.62 255.255.255.224
+  no shut
+  end
+
+@R3
+conf t
+ int e0/0
+  ip add 192.168.230.3 255.255.240.0
+  no shut
+  end
+ int e0/1
+  ip add 72.6.12.22 255.255.255.252
+  no shut
+  end
+
+@R4
+conf t
+ int e0/0
+  ip add 10.4.8.85 255.255.255.240
+  no shut
+ int e0/1
+  ip add 107.22.47.54 255.255.255.252
+  no shut
+  end
+
