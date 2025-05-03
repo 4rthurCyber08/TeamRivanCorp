@@ -50,6 +50,41 @@ Do not remove any BGP configurations
 
 8. TShoot the ACL on R1
 
+
+SOLUTION
+
+1. Configure NAT on R1, R2, R3, and R4 to allow PCs to ping the loopback IP of I1
+	- Configure an ACL named site3nat that permits only all Class B IPv4 address to the internet.
+	- Configure NAT on R1 using a NAT pool name site1nat
+	- Configure NAT on R2 with an ACL that allows only 
+
+
+
+2. Configure I1 as a DNS server
+	- Set R1's public IP as siteA.com
+	- Set R2's public IP as siteB.com
+	- Set R3's public IP as siteC.com
+	- Set R4's public IP as siteD.com
+
+3. Configure All routers and PCs to have I1 as their DNS Server
+
+4. Configure an ACL on R3 to block the following
+	- HTTP from R2
+	- ICMP from R1
+	- Telnet from R4
+	- Finger from R1
+	- Daytime from R2
+	- NTP from R1
+	- DNS from R4
+
+5. Configure an account on P2 and allow all remote connections
+
+6. Configure Port forwarding on R2 that will allow telnet connections to be forwarded to P2.
+
+7. Configure a Standard ACL on R3 to deny remote connections.
+	- Do not use the transport input command to achieve this.
+
+8. TShoot the ACL on R1
 ###########
 
 PRECONFIGURATIONS
@@ -197,15 +232,16 @@ conf t
 
 @I1
 conf t
+ hostname I1
  int lo0
   ip add 8.8.8.8 255.255.255.255
  int e0/0
   ip add 4.213.11.129 255.255.255.128
   no shut
  int e0/1
-  ip add 19.211.163.33 255.255.250.224
+  ip add 19.211.163.33 255.255.255.224
   no shut
- int e0/3
+ int e0/2
   ip add 72.6.12.21 255.255.255.252
   no shut
  int e0/3
@@ -222,6 +258,7 @@ conf t
    neighbor 72.6.12.22 activate
    neighbor 19.211.163.62 activate
    neighbor 4.213.11.254 activate
+   network 8.8.8.8 mask 255.255.255.255
    network 107.22.47.52 mask 255.255.255.252
    network 72.6.12.20 mask 255.255.255.252
    network 19.211.163.32 mask 255.255.255.224
