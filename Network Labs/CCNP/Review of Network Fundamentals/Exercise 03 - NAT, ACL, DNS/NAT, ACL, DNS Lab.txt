@@ -20,9 +20,13 @@ TASKS
 Do not remove any BGP configurations
 
 1. Configure NAT on R1, R2, R3, and R4 to allow PCs to ping the loopback IP of I1
-	- Configure an ACL named site3nat that permits only all Class B IPv4 address to the internet.
-	- Configure NAT on R1 using a NAT pool name site1nat
-	- Configure NAT on R2 with an ACL that allows only 
+	- Configure a standard ACL on R1 named r1nat, which allows only class A IP addresses to be translated from a pool named r1pool using all the IP addresses of the network connected on R1's outside interface.
+
+	- Configure a standard ACL on R2 named r2nat, which allows only class B IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface.
+
+	- Configure a standard ACL on R3 using a number as its identifier, that allows class C IP addresses to be translated using only the IP address on R3's outside interface.
+
+	- Configure an extended ACL on R4 using a number as its identifier, that allows only all private IP addresses to be translated on R4's e0/1 interface.
 
 2. Configure I1 as a DNS server
 	- Set R1's public IP as siteA.com
@@ -58,7 +62,7 @@ SOLUTION
 	- Configure NAT on R1 using a NAT pool name site1nat
 	- Configure NAT on R2 with an ACL that allows only 
 
-
+@
 
 2. Configure I1 as a DNS server
 	- Set R1's public IP as siteA.com
