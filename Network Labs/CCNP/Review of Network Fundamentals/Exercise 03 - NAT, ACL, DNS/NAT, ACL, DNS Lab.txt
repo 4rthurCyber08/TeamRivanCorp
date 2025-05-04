@@ -20,75 +20,103 @@ TASKS
 Do not remove any BGP configurations
 
 1. Configure NAT on R1, R2, R3, and R4 to allow PCs to ping the loopback IP of I1
-	- Configure a standard ACL on R1 named r1nat, which allows only class A IP addresses to be translated from a pool named r1pool using all the IP addresses of the network connected on R1's outside interface.
+	- Configure a standard ACL on R1 named r1nat, which allows only class A IP addresses to be translated from a pool named r1pool using all the IP addresses of the network connected on R1's outside interface. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure a standard ACL on R2 named r2nat, which allows only class B IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface.
+	- Configure a standard ACL on R2 named r2nat, which allows only class B IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure a standard ACL on R3 using a number as its identifier, that allows class C IP addresses to be translated using only the IP address on R3's outside interface.
+	- Configure a standard ACL on R3 using a number as its identifier, that allows class C IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure an extended ACL on R4 using a number as its identifier, that allows only all private IP addresses to be translated on R4's e0/1 interface.
+	- Configure an extended ACL on R4 using a number as its identifier, that allows only all private IP addresses to be translated on R4's e0/1 interface. Multiple hosts must be able to use the same IP addresses.
+
 
 2. Configure I1 as a DNS server
-	- Set R1's public IP as siteA.com
-	- Set R2's public IP as siteB.com
-	- Set R3's public IP as siteC.com
-	- Set R4's public IP as siteD.com
+	- Set R1's public IP as www.web11.com
+	- Set R2's public IP as www.web12.com
+	- Set R3's public IP as www.web13.com
+	- Set R4's public IP as www.web14.com
+
 
 3. Configure All routers and PCs to have I1 as their DNS Server
 
-4. Configure an ACL on R3 to block the following
-	- HTTP from R2
-	- ICMP from R1
-	- Telnet from R4
-	- Finger from R1
-	- Daytime from R2
-	- NTP from R1
-	- DNS from R4
 
-5. Configure an account on P2 and allow all remote connections
+4. Configure an ACL on R3 named 'portnumz' to allow only the following:
+	- HTTP, HTTPS, and Finger from R2
+	- ICMP, NTP, Chargen, and DNS from R1
+	- Telnet, SSH, and both Bootstrap Protocol from R4
+	- Any ports higher than 4000 from P2
 
-6. Configure Port forwarding on R2 that will allow telnet connections to be forwarded to P2.
 
-7. Configure a Standard ACL on R3 to deny remote connections.
+5. Configure the following accounts on P2 and make sure to enable only Telnet and SSH connections without the use of an ACL.
+	- Username: adm1n
+	  Password: s3cr3t
+          Hash: Type 5
+
+	- Username: n3t4ccess
+	  Password: h1dden
+	  Hash: Type 8
+
+	- Username: rivan
+	  Password: C1sc0123
+	  Hash: Type 9
+
+6. Configure R4 so that any telnet connections recieved on its ethernet 0/1 interface will be sent to P4.
+
+
+7. Configure a Standard ACL named 'nologin' on R1 to deny remote connections from R2.
 	- Do not use the transport input command to achieve this.
 
-8. TShoot the ACL on R1
+8. TShoot the ACL on R2 so that the address 20.20.20.20/24 can be pinged by R2. 
 
 
 SOLUTION
 
 1. Configure NAT on R1, R2, R3, and R4 to allow PCs to ping the loopback IP of I1
-	- Configure an ACL named site3nat that permits only all Class B IPv4 address to the internet.
-	- Configure NAT on R1 using a NAT pool name site1nat
-	- Configure NAT on R2 with an ACL that allows only 
+	- Configure a standard ACL on R1 named r1nat, which allows only class A IP addresses to be translated from a pool named r1pool using all the IP addresses of the network connected on R1's outside interface. Multiple hosts must be able to use the same IP addresses.
 
-@
+	- Configure a standard ACL on R2 named r2nat, which allows only class B IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface. Multiple hosts must be able to use the same IP addresses.
+
+	- Configure a standard ACL on R3 using a number as its identifier, that allows class C IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
+
+	- Configure an extended ACL on R4 using a number as its identifier, that allows only all private IP addresses to be translated on R4's e0/1 interface. Multiple hosts must be able to use the same IP addresses.
+
 
 2. Configure I1 as a DNS server
-	- Set R1's public IP as siteA.com
-	- Set R2's public IP as siteB.com
-	- Set R3's public IP as siteC.com
-	- Set R4's public IP as siteD.com
+	- Set R1's public IP as www.web11.com
+	- Set R2's public IP as www.web12.com
+	- Set R3's public IP as www.web13.com
+	- Set R4's public IP as www.web14.com
+
 
 3. Configure All routers and PCs to have I1 as their DNS Server
 
-4. Configure an ACL on R3 to block the following
-	- HTTP from R2
-	- ICMP from R1
-	- Telnet from R4
-	- Finger from R1
-	- Daytime from R2
-	- NTP from R1
-	- DNS from R4
 
-5. Configure an account on P2 and allow all remote connections
+4. Configure an ACL on R3 named 'portnumz' to allow only the following:
+	- HTTP, HTTPS, and Finger from R2
+	- ICMP, NTP, Chargen, and DNS from R1
+	- Telnet, SSH, and both Bootstrap Protocol from R4
+	- Any ports higher than 4000 from P2
 
-6. Configure Port forwarding on R2 that will allow telnet connections to be forwarded to P2.
 
-7. Configure a Standard ACL on R3 to deny remote connections.
+5. Configure the following accounts on P2 and make sure to enable only Telnet and SSH connections without the use of an ACL.
+	- Username: adm1n
+	  Password: s3cr3t
+          Hash: Type 5
+
+	- Username: n3t4ccess
+	  Password: h1dden
+	  Hash: Type 8
+
+	- Username: rivan
+	  Password: C1sc0123
+	  Hash: Type 9
+
+6. Configure R4 so that any telnet connections recieved on its ethernet 0/1 interface will be sent to P4.
+
+
+7. Configure a Standard ACL named 'nologin' on R1 to deny remote connections from R2.
 	- Do not use the transport input command to achieve this.
 
-8. TShoot the ACL on R1
+8. TShoot the ACL on R2 so that the address 8.8.8.8 is able to ping R2. 
 ###########
 
 PRECONFIGURATIONS
