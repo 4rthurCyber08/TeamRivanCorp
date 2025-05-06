@@ -248,11 +248,30 @@ conf t
 
 
 4. Configure an ACL on R3 named 'portnumz' to allow only the following:
-	- HTTP, HTTPS, and Finger from R2
-	- ICMP, NTP, Chargen, and DNS from R1
-	- Telnet, SSH, and both Bootstrap Protocol from R4
-	- Any ports higher than 4000 from P2
+	- HTTP, HTTPS, and Finger coming from R2
+	- ICMP, NTP, Chargen, and DNS coming from R1
+	- Telnet, SSH, and both Bootstrap Protocol coming from R4
+	- Any tcp ports higher than 4000 coming from P2
 
+@R3
+conf t
+ ip access-list extended portnumz
+  permit tcp 19.211.163.62 0.0.0.31 any eq 80
+  permit tcp 19.211.163.62 0.0.0.31 any eq 443
+  permit tcp 19.211.163.62 0.0.0.31 any eq 79
+  !
+  permit icmp 4.213.11.254 0.0.0.128 any
+  permit udp 4.213.11.254 0.0.0.128 any eq 123
+  permit tcp 4.213.11.254 0.0.0.128 any eq 19
+  permit tcp 4.213.11.254 0.0.0.128 any eq 53
+  !
+  permit tcp 107.22.47.54 0.0.0.3 any eq 23
+  permit tcp 107.22.47.54 0.0.0.3 any eq 22
+  permit udp 107.22.47.54 0.0.0.3 any eq 67
+  permit udp 107.22.47.54 0.0.0.3 any eq 68
+  !
+  permit tcp 19.211.163.62 0.0.0.31 any gt 4000
+  end
 
 5. Configure the following accounts on P2 and make sure to enable only Telnet and SSH connections without the use of an ACL.
 	- Username: adm1n
