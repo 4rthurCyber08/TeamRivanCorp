@@ -1,5 +1,6 @@
 1. Mount the ServerEval File
  - Take note of the Drive
+  E:\Sources\SxS
 
 2. Open Server Manager 
  - Manage > Add Roles and Features > 
