@@ -191,7 +191,7 @@ Now compared to the other tasks, we simply need to specify the outside interface
 
 @R3
 conf t
- ip nat source list 1 int e0/1 overload
+ ip nat inside source list 1 int e0/1 overload
  end
 
 
