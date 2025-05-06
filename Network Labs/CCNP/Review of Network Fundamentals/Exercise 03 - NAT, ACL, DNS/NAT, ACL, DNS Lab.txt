@@ -49,14 +49,17 @@ Do not remove any BGP configurations
 5. Configure the following accounts on P2 and make sure to enable only Telnet and SSH connections without the use of an ACL.
 	- Username: adm1n
 	  Password: s3cr3t
+          Mode: Privilege Exec
           Hash: Type 5
 
 	- Username: n3t4ccess
 	  Password: h1dden
+          Mode: Privilege Exec
 	  Hash: Type 8
 
 	- Username: rivan
 	  Password: C1sc0123
+          Mode: Privilege Exec
 	  Hash: Type 9
 
 6. Configure R4 so that any telnet connections recieved on its ethernet 0/1 interface will be sent to P4.
@@ -270,25 +273,67 @@ conf t
   permit udp 107.22.47.54 0.0.0.3 any eq 67
   permit udp 107.22.47.54 0.0.0.3 any eq 68
   !
+  !- use the gt = greater than instead of eq = equals to
   permit tcp 19.211.163.62 0.0.0.31 any gt 4000
   end
 
 5. Configure the following accounts on P2 and make sure to enable only Telnet and SSH connections without the use of an ACL.
+
 	- Username: adm1n
 	  Password: s3cr3t
+          Mode: Privilege Exec
           Hash: Type 5
+
+Type 5, aka md5, is already applied to the secret command by default.
+
+@P2
+config t
+ username adm1n privilege 15 secret s3cr3t
+ end
+
 
 	- Username: n3t4ccess
 	  Password: h1dden
+          Mode: Privilege Exec
 	  Hash: Type 8
+
+Type 8, aka sha256, needs to be specified using the algorithm-type command.
+
+@P2
+config t
+ username n3t4ccess privilege 15 algorithm-type sha256 secret h1dden 
+ end
+
 
 	- Username: rivan
 	  Password: C1sc0123
+          Mode: Privilege Exec
 	  Hash: Type 9
+
+@P2
+config t
+ username rivan privilege 15 algorithm-type scrypt secret C1sc0123 
+ end
+
+Type 9, aka Scrypt.
+
+In order to enable only telnet and ssh connections on the device, we will need to modify the vty lines.
+
+@P2
+conf t
+ line vty 0 4
+  transport input telnet ssh
+  login local
+  end
+
+We need the login local command so that the device asks for both username and password upon remote login, which is required by ssh.
+
+*Note: vty lines range higher than 0 4. Recent devices have 16 vty lines. Others, more.
+
 
 6. Configure R4 so that any telnet connections recieved on its ethernet 0/1 interface will be sent to P4.
 
-
+We will need to configure port forwarding to 
 7. Configure a Standard ACL named 'nologin' on R1 to deny remote connections from R2.
 	- Do not use the transport input command to achieve this.
 
