@@ -228,8 +228,23 @@ conf t
 	- Set R3's public IP as www.web13.com
 	- Set R4's public IP as www.web14.com
 
+@I1
+conf t
+ ip dns server
+ ip domain lookup
+ ip host www.web11.com 4.213.11.254
+ ip host www.web12.com 19.211.163.62
+ ip host www.web13.com 72.6.12.22
+ ip host www.web14.com 107.22.47.54
+ end
+
 
 3. Configure All routers and PCs to have I1 as their DNS Server
+
+@All
+conf t
+ ip name-server 8.8.8.8
+ end
 
 
 4. Configure an ACL on R3 named 'portnumz' to allow only the following:
