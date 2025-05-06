@@ -317,18 +317,18 @@ conf t
 conf t
  hostname P2
  int e0/0
-  ip add 192.168.230.3 255.255.240.0
+  ip add 172.16.45.78 255.255.255.192
   no shut
- ip route 0.0.0.0 0.0.0.0 192.168.230.4
+ ip route 0.0.0.0 0.0.0.0 172.16.45.77
   end
 
 @P3
 conf t
  hostname P3
  int e0/0
-  ip add 172.16.45.78 255.255.255.192
+  ip add 192.168.230.3 255.255.240.0
   no shut
- ip route 0.0.0.0 0.0.0.0 172.16.45.77
+ ip route 0.0.0.0 0.0.0.0 192.168.230.4
   end
 
 @P4
@@ -361,7 +361,7 @@ conf t
 conf t
  hostname R2
  int e0/1
-  ip add 172.16.45.77 255.255.255.252
+  ip add 172.16.45.77 255.255.255.192
   no shut
  int e0/0
   ip add 19.211.163.62 255.255.255.224
