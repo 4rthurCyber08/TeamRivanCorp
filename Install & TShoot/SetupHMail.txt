@@ -7,4 +7,7 @@
    - Make Sure to install: .NET Framework 3.5 Features
        .NET Framework 3.5 (includes .NET 2.0 and 3.0)
 
-3. Install ThunderBird, hMailServer
+3. Install the following 
+ - hMailServer
+   - Create an Account
+ - ThunderBird
