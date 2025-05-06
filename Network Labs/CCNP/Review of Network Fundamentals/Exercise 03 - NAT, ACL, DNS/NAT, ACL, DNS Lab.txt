@@ -333,7 +333,10 @@ We need the login local command so that the device asks for both username and pa
 
 6. Configure R4 so that any telnet connections recieved on its ethernet 0/1 interface will be sent to P4.
 
-We will need to configure port forwarding to 
+We will need to configure port forwarding to achieve the given task.
+
+
+
 7. Configure a Standard ACL named 'nologin' on R1 to deny remote connections from R2.
 	- Do not use the transport input command to achieve this.
 
