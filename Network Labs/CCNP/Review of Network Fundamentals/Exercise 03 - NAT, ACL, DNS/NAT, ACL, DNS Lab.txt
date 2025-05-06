@@ -20,11 +20,11 @@ TASKS
 Do not remove any BGP configurations
 
 1. Configure NAT on R1, R2, R3, and R4 to allow PCs to ping the loopback IP of I1
-	- Configure a standard ACL on R1 named r1nat, which allows only class A IP addresses to be translated from a pool named r1pool using all the IP addresses of the network connected on R1's outside interface. Multiple hosts must be able to use the same IP addresses.
+	- Configure a standard ACL on R1 named r1nat, which allows only class A private IP addresses to be translated from a pool named r1pool using all the unused IP addresses of the network connected on R1's outside interface except for the one local to I1. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure a standard ACL on R2 named r2nat, which allows only class B IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface. Multiple hosts must be able to use the same IP addresses.
+	- Configure a standard ACL on R2 named r2nat, which allows only class B private IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure a standard ACL on R3 using a number as its identifier, that allows class C IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
+	- Configure a standard ACL on R3 using a number as its identifier, that allows class C private IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
 
 	- Configure an extended ACL on R4 using a number as its identifier, that allows only all private IP addresses to be translated on R4's e0/1 interface. Multiple hosts must be able to use the same IP addresses.
 
@@ -71,11 +71,104 @@ Do not remove any BGP configurations
 SOLUTION
 
 1. Configure NAT on R1, R2, R3, and R4 to allow PCs to ping the loopback IP of I1
-	- Configure a standard ACL on R1 named r1nat, which allows only class A IP addresses to be translated from a pool named r1pool using all the IP addresses of the network connected on R1's outside interface. Multiple hosts must be able to use the same IP addresses.
+	- Configure a standard ACL on R1 named r1nat, which allows only class A private IP addresses to be translated from a pool named r1pool using all the unused IP addresses of the network connected on R1's outside interface except for the one local to I1. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure a standard ACL on R2 named r2nat, which allows only class B IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface. Multiple hosts must be able to use the same IP addresses.
+To configure NAT, we need to specify the inside and outside interfaces. 
 
-	- Configure a standard ACL on R3 using a number as its identifier, that allows class C IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
+@R1
+conf t
+ int e0/0
+  ip nat outside
+ int e0/1
+  ip nat inside
+  end
+
+Next, we need to configure a named standard access-list that permits only Class A private ip addresses. 
+We know that the private Class A ip range is, 10.0.0.0 - 10.255.255.255
+Since the network portion is only the first 8 bits, or the first octet (10.x.x.x) we can simply use a /8 or 0.255.255.255 wildcard mask for the access-list.
+
+@R1
+conf t
+ ip access-list standard r1nat
+  permit 10.0.0.0 0.255.255.255
+  end
+
+Now we need a NAT pool that contains the unused ip addresses on R1's outside interface except for the one local to I1, in this case is 4.213.11.130 - 4.213.11.254
+
+@R1
+conf t
+ ip nat pool r1pool 4.213.11.130 4.213.11.254
+ end
+
+Now we are ready to apply the final configuration that will enable nat translations. Make sure to add the overload key word to allow multiple devices to use the same outside ip through the use of port mappings.
+
+@R1
+conf t
+ ip nat inside source list r1nat pool r1pool overload
+ end
+
+
+	- Configure a standard ACL on R2 named r2nat, which allows only class B private IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface except for the one local to I1. Multiple hosts must be able to use the same IP addresses.
+
+@R2
+conf t
+ int e0/0
+  ip nat outside
+ int e0/1
+  ip nat inside
+  end
+
+This time, we need to configure a named standard access-list, that permits only Class B private ip addresses. 
+We know that the private Class B ip range is, 172.16.0.0 - 172.31.255.255
+
+This time we need to think about what Wildcard Mask we need to use to capture all IPs within that range. 
+
+Let's start by using CIDR. 
+
+On the second octet, notice that the number (172.16.x.x) ranges up to (172.31.x.x). Do we know of a slash that increments in such a way? That increments by 16?
+
+The slash is /12 with the rivan form at of (2nd octet, 16i)
+
+Let's see if the range is correct.
+
+172.0.0.0 /16 Network 1
+172.0.0.1 First Valid
+172.15.255.254 Last Valid
+172.15.255.255 Broadcast
+
+172.16.0.0 Network 2
+172.16.0.1 First Valid
+172.31.255.254 Last Valid
+172.31.255.255 Broadcast
+
+172.32.0.0 Network 3
+and so on
+
+Based on network 2, we can now specify class B addresses for the acl
+
+@R2
+conf t
+ ip access-list standard r2nat
+  permit 172.16.0.0 0.15.255.255
+  end
+
+Now we need a NAT pool that contains the unused ip addresses on R2's outside interface except for the one local to I1, in this case is 19.211.163.34 - 19.211.163.62
+
+@R2
+conf t
+ ip nat pool r2pool 19.211.163.34 19.211.163.62
+ end
+
+Now apply the final command with overload.
+
+@R1
+conf t
+ ip nat inside source list r2nat pool r2pool overload
+ end
+
+
+
+	- Configure a standard ACL on R3 using a number as its identifier, that allows class C private IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
 
 	- Configure an extended ACL on R4 using a number as its identifier, that allows only all private IP addresses to be translated on R4's e0/1 interface. Multiple hosts must be able to use the same IP addresses.
 
