@@ -1,0 +1,10 @@
+1. Mount the ServerEval File
+ - Take note of the Drive
+
+2. Open Server Manager 
+ - Manage > Add Roles and Features > 
+ - Follow Setup
+   - Make Sure to install: .NET Framework 3.5 Features
+       .NET Framework 3.5 (includes .NET 2.0 and 3.0)
+
+3. Install ThunderBird, hMailServer
