@@ -24,9 +24,9 @@ Do not remove any BGP configurations
 
 	- Configure a standard ACL on R2 named r2nat, which allows only class B private IP addresses to be translated from a pool named r2pool using all the IP addresses of the network connected on R2's outside interface. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure a standard ACL on R3 using a number as its identifier, that allows class C private IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
+	- Configure a standard numbered ACL on R3 that allows class C private IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure an extended ACL on R4 using a number as its identifier, that allows only all private IP addresses to be translated on R4's e0/1 interface. Multiple hosts must be able to use the same IP addresses.
+	- Configure an extended numbered ACL on R4 that allows only all private IP addresses to be translated on R4's e0/1 interface. Multiple hosts must be able to use the same IP addresses.
 
 
 2. Configure I1 as a DNS server
@@ -97,7 +97,7 @@ Now we need a NAT pool that contains the unused ip addresses on R1's outside int
 
 @R1
 conf t
- ip nat pool r1pool 4.213.11.130 4.213.11.254
+ ip nat pool r1pool 4.213.11.130 4.213.11.254 netmask 255.255.255.128
  end
 
 Now we are ready to apply the final configuration that will enable nat translations. Make sure to add the overload key word to allow multiple devices to use the same outside ip through the use of port mappings.
@@ -156,21 +156,70 @@ Now we need a NAT pool that contains the unused ip addresses on R2's outside int
 
 @R2
 conf t
- ip nat pool r2pool 19.211.163.34 19.211.163.62
+ ip nat pool r2pool 19.211.163.34 19.211.163.62 netmask 255.255.255.224
  end
 
 Now apply the final command with overload.
 
-@R1
+@R2
 conf t
  ip nat inside source list r2nat pool r2pool overload
  end
 
 
+	- Configure a standard numbered ACL on R3, that allows class C private IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
 
-	- Configure a standard ACL on R3 using a number as its identifier, that allows class C private IP addresses to be translated using only the IP address on R3's outside interface. Multiple hosts must be able to use the same IP addresses.
+@R3
+conf t
+ int e0/1
+  ip nat outside
+ int e0/0
+  ip nat inside
+  end
 
-	- Configure an extended ACL on R4 using a number as its identifier, that allows only all private IP addresses to be translated on R4's e0/1 interface. Multiple hosts must be able to use the same IP addresses.
+Class C private IP addresses range from 192.168.0.0 - 192.168.255.255
+
+Since the network portion is 192.168.0.0 we can simply use a /16 to specify the range.
+Also, the number range for standard access-list is 1-99 and 1300-1999, while extended is 100-199 and 2000-2699.
+
+@R3
+conf t
+ access-list 1 permit 192.168.0.0 0.0.255.255
+ end
+
+Now compared to the other tasks, we simply need to specify the outside interface of R3 to make use of its global ip address for translating inside local ips.
+
+@R3
+conf t
+ ip nat source list 1 int e0/1 overload
+ end
+
+
+	- Configure an extended numbered ACL on R4 that allows only all private IP addresses to be translated on R4's e0/1 interface. Multiple hosts must be able to use the same IP addresses.
+
+@R4
+conf t
+ int e0/1
+  ip nat outside
+ int e0/0
+  ip nat inside
+  end
+
+Once again the number range for standard access-list is 1-99 and 1300-1999, while extended is 100-199 and 2000-2699.
+
+@R4
+conf t
+ access-list 100 permit ip 10.0.0.0 0.255.255.255 any
+ access-list 100 permit ip 172.16.0.0 0.15.255.255 any
+ access-list 100 permit ip 192.168.0.0 0.0.255.255 any
+ end
+
+Finally, input the command to configure nat using R4s outside interface.
+
+@R4
+conf t
+ ip nat inside source list 100 int e0/1 overload
+ end
 
 
 2. Configure I1 as a DNS server
@@ -261,6 +310,7 @@ conf t
  int e0/0
   ip add 10.1.2.13 255.255.255.252 
   no shut
+ ip route 0.0.0.0 0.0.0.0 10.1.2.14
   end
 
 @P2
@@ -269,6 +319,7 @@ conf t
  int e0/0
   ip add 192.168.230.3 255.255.240.0
   no shut
+ ip route 0.0.0.0 0.0.0.0 192.168.230.4
   end
 
 @P3
@@ -277,6 +328,7 @@ conf t
  int e0/0
   ip add 172.16.45.78 255.255.255.192
   no shut
+ ip route 0.0.0.0 0.0.0.0 172.16.45.77
   end
 
 @P4
@@ -285,6 +337,7 @@ conf t
  int e0/0
   ip add 10.4.8.86 255.255.255.240
   no shut
+ ip route 0.0.0.0 0.0.0.0 10.4.8.85
   end
 
 @R1
@@ -325,7 +378,7 @@ conf t
 conf t
  hostname R3
  int e0/0
-  ip add 192.168.230.3 255.255.240.0
+  ip add 192.168.230.4 255.255.240.0
   no shut
  int e0/1
   ip add 72.6.12.22 255.255.255.252
@@ -360,6 +413,12 @@ conf t
  hostname I1
  int lo0
   ip add 8.8.8.8 255.255.255.255
+ int lo1
+  ip add 10.0.0.1 255.0.0.0
+ int lo2
+  ip add 172.16.0.1 255.240.0.0
+ int lo3
+  ip add 192.168.0.1 255.255.0.0
  int e0/0
   ip add 4.213.11.129 255.255.255.128
   no shut
