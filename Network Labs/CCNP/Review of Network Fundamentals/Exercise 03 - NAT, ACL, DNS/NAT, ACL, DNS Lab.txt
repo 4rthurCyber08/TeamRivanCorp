@@ -335,10 +335,24 @@ We need the login local command so that the device asks for both username and pa
 
 We will need to configure port forwarding to achieve the given task.
 
+@R4
+conf t
+ ip nat inside source static tcp 10.4.8.86 23 int e0/1 23
+ end
+
+Verify: From P1, attempt to telnet R4's public IP (107.22.47.54) or the domain name (www.web14.com)
+
+@P1
+telnet www.web14.com
+
+The command simply says, if R4 recieves any IP addresses with port 23 (telnet) on its e0/1 interface, it will forward that packet to 10.4.8.84 (P4)
 
 
 7. Configure a Standard ACL named 'nologin' on R1 to deny remote connections from R2.
 	- Do not use the transport input command to achieve this.
+
+
+
 
 8. TShoot the ACL on R2 so that the address 8.8.8.8 is able to ping R2. 
 ###########
@@ -420,6 +434,11 @@ conf t
   ip add 10.4.8.86 255.255.255.240
   no shut
  ip route 0.0.0.0 0.0.0.0 10.4.8.85
+ line vty 0 4
+  transport input telnet
+  password pass
+  login
+  exec-timeout 0 0
   end
 
 @R1
