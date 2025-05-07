@@ -445,9 +445,9 @@ conf t
 conf t
  hostname R1
  line vty 0 4
+  password pass
   transport input all
   login
-  password pass
  int e0/1
   ip add 10.1.2.14 255.255.255.252
   no shut
