@@ -351,7 +351,7 @@ The command simply says, if R4 recieves any IP addresses with port 23 (telnet) o
 7. Configure a Standard ACL named 'nologin' on R1 to deny remote connections from R2.
 	- Do not use the transport input command to achieve this.
 
-
+@R1
 
 
 8. TShoot the ACL on R2 so that the address 8.8.8.8 is able to ping R2. 
@@ -444,6 +444,10 @@ conf t
 @R1
 conf t
  hostname R1
+ line vty 0 4
+  transport input all
+  login
+  password pass
  int e0/1
   ip add 10.1.2.14 255.255.255.252
   no shut
