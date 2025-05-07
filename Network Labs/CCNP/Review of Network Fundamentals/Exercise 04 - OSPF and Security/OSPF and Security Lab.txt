@@ -154,7 +154,7 @@ conf t
   no shut
   !- connect to D1
  int e0/1
-  ip add 10.3.6.1 255.255.255.252
+  ip add 10.3.6.1 255.255.255.128
   no shut
   !- connect to R6
   end
@@ -185,6 +185,22 @@ conf t
   no shut
  int e0/3
   !- connect to S3
-  ip add 
+  ip add 192.168.5.1 255.255.255.224
+  no shut 
 
 @R6
+conf t
+ hostname R6
+ int e0/0
+  !- connect to R3
+  ip add 10.3.6.126 255.255.255.128
+  no shut
+ int e0/1
+  !- connect to R4
+  ip add 10.4.6.2 255.255.255.252
+  no shut
+ int e0/3
+  !- connect to S4
+  ip add 192.168.6.1 255.255.255.224
+  no shut
+  end
