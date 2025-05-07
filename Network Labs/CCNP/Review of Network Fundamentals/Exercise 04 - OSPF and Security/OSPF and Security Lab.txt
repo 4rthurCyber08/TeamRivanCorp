@@ -4,7 +4,7 @@ OSPF and Security Lab
 For Accessing Devices
 
  Device 	Port
- P1		 	2165
+ P1		2165
  S1 	 	2166
  S2 	 	2167
  D1 	 	2168
@@ -28,18 +28,18 @@ R1 & R3 are configured for OSPF. Additionally, configure DHCP Snooping and Dynam
 
 1. Configure D1 for DHCP Snooping
  - Enable DHCP Snooping for VLAN 1.
- -	Disable DHCP Option-82 data insertion.
-	- Enable DHCP Snooping MAC address verification.
-	- Enable trusted interfaces.
-	- Set limit rate to 10 for untrusted ports.
- -	Set errdisable recovery interval of 5 mins
+ - Disable DHCP Option-82 data insertion.
+ - Enable DHCP Snooping MAC address verification.
+ - Enable trusted interfaces.
+ - Set limit rate to 10 for untrusted ports.
+ - Set errdisable recovery interval of 5 mins
 
 2. Configure D1 for Dynamic Arp Inspection.
-	- Enable Dynamic Arp Inspection for both vlan 30 and 50
-	- Enable trusted interface
-	- Set limit rate to 25 for untrusted ports with a burst interval of 2
- -	Set errdisable recovery interval 5 mins.
- -	Enable all validation checks
+ - Enable Dynamic Arp Inspection for both vlan 30 and 50
+ - Enable trusted interface
+ - Set limit rate to 25 for untrusted ports with a burst interval of 2
+ - Set errdisable recovery interval 5 mins.
+ - Enable all validation checks
 
 3. Configure OSPF on the routers.
  - Advertise all Connected routes.
