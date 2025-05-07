@@ -81,3 +81,58 @@ conf t
   exec-timeout 0 0
   end
 wr
+
+@S1
+conf t
+ hostname S1
+ int e0/2
+  ip add 192.168.1.100 255.255.255.0
+  no shut
+ ip dhcp pool hacker1pool
+  network 192.168.1.0 255.255.255.0
+  default-router 192.168.1.100
+  domain-name yougothacked.com
+  dns-server 192.168.1.100
+  end
+
+@S2
+conf t
+ hostname S2
+ int e0/3
+  ip add 192.168.1.200 255.255.255.0
+  no shut
+ ip dhcp pool hacker2pool
+  network 192.168.1.0 255.255.255.0
+  default-router 192.168.1.200
+  domain-name yougothacked.com
+  dns-server 192.168.1.200
+  end
+
+
+@D1
+conf t
+ hostname D1
+ int vlan 1
+  ip add 192.168.1.254 255.255.255.0
+  no shut
+ int range e0/3,e1/0-2
+  no sw
+  end
+
+
+@R1
+conf t
+ hostname R1
+ int e0/0
+  ip add 10.1.1.37 255.255.255.128
+  !- connect to D1
+  no shut
+ int e0/1
+  ip add 10.1.5.1 255.255.255.252
+  !- connect to R5
+  no shut
+  end
+
+@R2
+conf t
+ hostname
