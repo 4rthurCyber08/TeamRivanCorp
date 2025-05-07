@@ -352,6 +352,29 @@ The command simply says, if R4 recieves any IP addresses with port 23 (telnet) o
 	- Do not use the transport input command to achieve this.
 
 @R1
+conf t
+ ip access-list standard nologin
+  deny host 19.211.163.62
+  permit any
+  end
+
+Now we need to apply this access-list to the vty lines. Remember that applying ACLs to vty lines uses the "access-class" command instead of "ip access-group" that we use on interfaces.
+
+*Note Before applying the command, attempt to telnet from R2 to R1's public IP, make sure it is successful so we can see our ACL take effect after applying to the vty lines.
+
+@R1
+conf t
+ line vty 0 4
+  access-class nologin in
+  end
+
+Verify: From R2, finally telnet to R1. Telnet MUST Fail.
+
+@R2
+telnet 4.213.11.254
+
+Trying 4.213.11.254 ... 
+% Connection refused by remote host
 
 
 8. TShoot the ACL on R2 so that the address 8.8.8.8 is able to ping R2. 
