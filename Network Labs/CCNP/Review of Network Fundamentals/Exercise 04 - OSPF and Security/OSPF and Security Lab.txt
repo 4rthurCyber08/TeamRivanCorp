@@ -20,10 +20,44 @@ For Accessing Devices
  
 TASKS
 
-1. Configure DHCP Snooping on the unused ports on D1
-2. TShoot OSPF
-3. 
+R1, R3, S1, and S2 are inaccessible. 
+*NOTE: Do not shutdown any ports on D1.
 
+IP addressing is preconfigured. 
+R1 & R3 are configured for OSPF. Additionally, configure DHCP Snooping and Dynamic ARP inspection on D1 to prevent Rogue DHCP Servers from harming the network. 
+
+1. Configure D1 for DHCP Snooping
+ - Enable DHCP Snooping for VLAN 1.
+ -	Disable DHCP Option-82 data insertion.
+	- Enable DHCP Snooping MAC address verification.
+	- Enable trusted interfaces.
+	- Set limit rate to 10 for untrusted ports.
+ -	Set errdisable recovery interval of 5 mins
+
+2. Configure D1 for Dynamic Arp Inspection.
+	- Enable Dynamic Arp Inspection for both vlan 30 and 50
+	- Enable trusted interface
+	- Set limit rate to 25 for untrusted ports with a burst interval of 2
+ -	Set errdisable recovery interval 5 mins.
+ -	Enable all validation checks
+
+3. Configure OSPF on the routers.
+ - Advertise all Connected routes.
+ - Set the IP address on loopback 10 as the router ID for all routers.
+ - All routers must not send hello packets out to their loopback interfaces.
+ - On the link between R2 and R5, make sure R2 will always be the DR.
+ - On the link between R3 and R6, make sure R3 will always be the DR.
+ - Make sure D1 has the highest priority on both area 15 and area 16.
+ - Configure D1 to be in the DROTHER state on Area 0
+
+4. On S3 and S4, configure both a floating static route to reach the network between D1 and P1.
+ - The route must have an administrative distance that is 20 units higher than OSPF.
+ - On S4, the route must not define a next-hop.
+
+5. Configure D1 to relay DHCP discover messages to S4.
+
+6. P1 must be a DHCP client.
+ - P1 must have D1 as its default gateway.
 
 ###########
 
@@ -93,6 +127,8 @@ conf t
   default-router 192.168.1.100
   domain-name yougothacked.com
   dns-server 192.168.1.100
+  exit
+ no cdp enable
   end
 
 @S2
@@ -106,8 +142,8 @@ conf t
   default-router 192.168.1.200
   domain-name yougothacked.com
   dns-server 192.168.1.200
+ no cdp enable
   end
-
 
 @D1
 conf t
@@ -204,3 +240,20 @@ conf t
   ip add 192.168.6.1 255.255.255.224
   no shut
   end
+
+@S3
+conf t
+ hostname S3
+ int e0/0
+  ip add 10.5.31.6 255.255.255.248
+  no shut
+  end
+
+@S4
+conf t
+ hostname S4
+ int e0/0
+  ip add 10.5.31.6 255.255.255.248
+  no shut
+  end
+
