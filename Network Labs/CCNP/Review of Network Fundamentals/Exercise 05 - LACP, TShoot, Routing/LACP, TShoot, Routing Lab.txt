@@ -29,8 +29,13 @@ D1, I1, and I2 is inaccessible.
 
 3. Configure a static host route on R2 to reach only the IP 8.8.8.8
 
-4. Configure a static network route on R2 to reach S1.
+4. Establish IP connectivity between S1 and R2 using only static host routes.
 
+5. Establish redundant IP connectivity between D2 and S1 using only static network routes. 
+ - D2 must prefer D1 to reach S1
+ - R2 must serve as backup to reach S1.
+
+6. Configure a default route on R1 to reach S1 and I3
 
 ###########
 
