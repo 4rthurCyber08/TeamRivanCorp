@@ -17,9 +17,19 @@ For Accessing Devices
  
 TASKS
 
-1. Configure DHCP Snooping on the unused ports on D1
-2. TShoot OSPF
-3. 
+D1, I1, and I2 is inaccessible. 
+
+1. Configure LACP etherchannel on the link between D1 and D2.
+ - D1 is negotiating to be a LACP etherchannel.
+ - The mode on D1 and D2 must be different.
+
+2. Configure default routes on R1 to reach the IP 8.8.8.8
+ - Set a default route on R1's e0/2 interface to reach 8.8.8.8
+ - Set a floating static default route on R1's e0/3 interface to reach 8.8.8.8 with an administrative distance 50 units higher than EIGRP.
+
+3. Configure a static host route on R2 to reach only the IP 8.8.8.8
+
+4. Configure a static network route on R2 to reach S1.
 
 
 ###########
