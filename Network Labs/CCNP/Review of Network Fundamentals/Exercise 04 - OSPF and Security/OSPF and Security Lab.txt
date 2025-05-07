@@ -172,3 +172,19 @@ conf t
   !- connect to R6
   end
 
+@R5
+conf t
+ hostname R5
+ int e0/0
+  !- connect to R1
+  ip add 10.1.5.2 255.255.255.252
+  no shut
+ int e0/1
+  !- connect to R2
+  ip add 10.2.5.126 255.255.255.128
+  no shut
+ int e0/3
+  !- connect to S3
+  ip add 
+
+@R6
