@@ -68,8 +68,6 @@ Do not remove any BGP configurations
 7. Configure a Standard ACL named 'nologin' on R1 to deny remote connections from R2.
 	- Do not use the transport input command to achieve this.
 
-8. TShoot the ACL on R2 so that the address 20.20.20.20/24 can be pinged by R2. 
-
 
 SOLUTION
 
@@ -377,7 +375,6 @@ Trying 4.213.11.254 ...
 % Connection refused by remote host
 
 
-8. TShoot the ACL on R2 so that the address 8.8.8.8 is able to ping R2. 
 ###########
 
 PRECONFIGURATIONS
