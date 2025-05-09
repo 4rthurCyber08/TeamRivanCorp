@@ -35,3 +35,25 @@
         answer:
           - n
           - y
+
+
+                                            
+---
+- name: reboot ios device
+  hosts: edge
+  gather_facts: no
+  become: yes
+  tasks:
+    - name: erase config
+      ios_command:
+        commands:
+          - command: wr er
+            prompt: Continue?
+            answer: y
+
+    - name: reload device
+      ios_command:
+        commands:
+          - command: reload
+            prompt: reload
+            answer: y
