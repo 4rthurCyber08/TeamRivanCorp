@@ -10,3 +10,28 @@
          - command: wr er
            prompt: Continue?
            answer: y
+
+
+
+---
+- name: reboot ios device
+  hosts: cucm
+  gather_facts: no
+  become: no
+  tasks:
+    - name: erase config
+      ios_command:
+        commands:
+          - command: wr er
+            prompt: Continue?
+            answer: y
+
+    - name: reload device
+      cli_command:
+        command: reload
+        prompt:
+          - Save?
+          - reload
+        answer:
+          - n
+          - y
