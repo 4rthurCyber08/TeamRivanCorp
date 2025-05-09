@@ -1,0 +1,12 @@
+---
+- name: remove config
+  hosts: ctaas  # Replace with your Ansible inventory group
+  gather_facts: no
+  become: no   # Requires root/privileged access on the device
+  tasks:
+   - name: Erase the running configuration
+     ios_command:
+       commands:
+         - command: wr er
+           prompt: Continue?
+           answer: y
