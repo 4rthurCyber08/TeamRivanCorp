@@ -15,7 +15,7 @@ Step 2: Install ntopng
 
 Step 3: Install nprobe
 		Use: -n 208.8.8.1:2055
-		The IP MUST be the IP address of the PC on VMnet8
+		  The IP MUST be the IP address of the PC on your VMnet8 (NAT)
 		Then just keep clicking next. No other config necessary.
 
 Step 4: Install ntap_remote
