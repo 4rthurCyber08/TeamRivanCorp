@@ -4,7 +4,7 @@ OSPF and Security Lab
 For Accessing Devices
 
  Device 	Port
- P1		2165
+ P1		    2165
  S1 	 	2166
  S2 	 	2167
  D1 	 	2168
@@ -21,10 +21,13 @@ For Accessing Devices
 TASKS
 
 R1, R3, S1, and S2 are inaccessible. 
-*NOTE: Do not shutdown any ports on D1.
 
 IP addressing is preconfigured. 
-R1 & R3 are configured for OSPF. Additionally, configure DHCP Snooping and Dynamic ARP inspection on D1 to prevent Rogue DHCP Servers from harming the network. 
+R1 & R3 are configured for OSPF. 
+
+Additionally, configure DHCP Snooping and Dynamic ARP inspection on D1 to prevent Rogue DHCP Servers from poisoning the network. 
+
+*NOTE: Do not shutdown any ports on D1.
 
 1. Configure D1 for DHCP Snooping
  - Enable DHCP Snooping for VLAN 1.
@@ -45,9 +48,10 @@ R1 & R3 are configured for OSPF. Additionally, configure DHCP Snooping and Dynam
  - Advertise all Connected routes.
  - Set the IP address on loopback 10 as the router ID for all routers.
  - All routers must not send hello packets out to their loopback interfaces.
- - On the link between R2 and R5, make sure R2 will always be the DR.
- - On the link between R3 and R6, make sure R3 will always be the DR.
- - Make sure D1 has the highest priority on both area 15 and area 16.
+ - R1 is trying to form a P2P connection with R5, complete the configuration on R5 so that they form an adjacency.
+ - R3 must always the be the DR on area 36.
+ - On the link between R2 and R5, make sure R5 has the same hello and dead timers as R2.
+ - On the link between R4 and R6, set their ospf hello and dead timers to 12 and 20 seconds respectively.
  - Configure D1 to be in the DROTHER state on Area 0
 
 4. On S3 and S4, configure both a floating static route to reach the network between D1 and P1.
@@ -57,7 +61,9 @@ R1 & R3 are configured for OSPF. Additionally, configure DHCP Snooping and Dynam
 5. Configure D1 to relay DHCP discover messages to S4.
 
 6. P1 must be a DHCP client.
- - P1 must have D1 as its default gateway.
+ - Upon receiving an IP, P1 must have D1 as its default gateway.
+	Do not manually configure the default-gateway of P1.
+ 
 
 ###########
 
@@ -148,36 +154,81 @@ conf t
 @D1
 conf t
  hostname D1
+ int lo 1
+  ip add 11.1.1.1 255.255.255.255
+ int lo 5
+  ip add 11.5.5.5 255.255.255.255
+ int lo 10
+  ip add 11.10.10.10 255.255.255.255
  int vlan 1
   ip add 192.168.1.254 255.255.255.0
   no shut
  int range e0/3,e1/0-2
   no sw
+ int e0/3
+  !- connect to R1
+  ip add 10.1.1.1 255.255.255.128
+  no shut
+ int e1/0
+  !- connect to R2
+  ip add 10.1.2.65 255.255.255.192
+  no shut
+ int e1/1
+  !- connect to R3
+  ip add 10.1.3.17 255.255.255.240
+  no shut
+ int e1/2
+  !- connect to R4
+  ip add 10.1.4.61 255.255.255.248
+  no shut
   end
-
 
 @R1
 conf t
  hostname R1
+ int lo 1
+  ip add 1.1.1.1 255.255.255.255
+ int lo 5
+  ip add 1.1.5.5 255.255.255.0
+ int lo 10
+  ip add 1.1.10.10 255.255.255.224
  int e0/0
   ip add 10.1.1.37 255.255.255.128
   !- connect to D1
   no shut
  int e0/1
   ip add 10.1.5.1 255.255.255.252
+  ip ospf network point-to-point
   !- connect to R5
   no shut
+ router ospf 1
+  router-id 1.1.10.10
+  net 1.1.1.1 0.0.0.0 area 15
+  net 1.1.5.0 0.0.0.255 area 15
+  net 1.1.10.0 0.0.0.31 area 15
+  net 10.1.1.0 0.0.0.127 area 15
+  passive-interface lo1
+  passive-interface lo5
+  passive-interface lo10
   end
 
 @R2
 conf t
  hostname R2
+  int lo 1
+  ip add 2.2.1.1 255.255.255.255
+ int lo 5
+  ip add 2.2.5.5 255.255.255.0
+ int lo 10
+  ip add 2.2.10.10 255.255.255.224
  int e0/0
   ip add 10.1.2.89 255.255.255.192
   no shut
   !- connect to D1
  int e0/2
   ip add 10.2.5.1 255.255.255.128
+  ip ospf hello-timer 30
+  ip ospf dead-timer 40
   no shut
   !- connect to R5
   end
@@ -185,6 +236,12 @@ conf t
 @R3
 conf t
  hostname R3
+ int lo 1
+  ip add 3.3.1.1 255.255.255.255
+ int lo 5
+  ip add 3.3.5.5 255.255.255.0
+ int lo 10
+  ip add 3.3.10.10 255.255.255.224
  int e0/0
   ip add 10.1.3.29 255.255.255.240
   no shut
@@ -193,11 +250,27 @@ conf t
   ip add 10.3.6.1 255.255.255.128
   no shut
   !- connect to R6
+ router ospf 1
+  router-id 3.3.10.10
+  net 3.3.1.1 0.0.0.0 area 0
+  net 3.3.5.0 0.0.0.255 area 0
+  net 3.3.10.0 0.0.0.31 area 0
+  net 10.1.3.16 0.0.0.15 area 0
+  net 10.3.6.0 0.0.0.128 area 36
+  passive-int lo1
+  passive-int lo5
+  passive-int lo10
   end
 
 @R4
 conf t
  hostname R4
+ int lo 1
+  ip add 4.4.1.1 255.255.255.255
+ int lo 5
+  ip add 4.4.5.5 255.255.255.0
+ int lo 10
+  ip add 4.4.10.10 255.255.255.224
  int e0/0
   ip add 10.1.4.62 255.255.255.248
   no shut
@@ -211,6 +284,12 @@ conf t
 @R5
 conf t
  hostname R5
+ int lo 1
+  ip add 5.5.1.1 255.255.255.255
+ int lo 5
+  ip add 5.5.5.5 255.255.255.0
+ int lo 10
+  ip add 5.5.10.10 255.255.255.224
  int e0/0
   !- connect to R1
   ip add 10.1.5.2 255.255.255.252
@@ -221,12 +300,18 @@ conf t
   no shut
  int e0/3
   !- connect to S3
-  ip add 192.168.5.1 255.255.255.224
+  ip add 10.5.31.1 255.255.255.248
   no shut 
 
 @R6
 conf t
  hostname R6
+ int lo 1
+  ip add 6.6.1.1 255.255.255.255
+ int lo 5
+  ip add 6.6.5.5 255.255.255.0
+ int lo 10
+  ip add 6.6.10.10 255.255.255.224
  int e0/0
   !- connect to R3
   ip add 10.3.6.126 255.255.255.128
@@ -237,7 +322,7 @@ conf t
   no shut
  int e0/3
   !- connect to S4
-  ip add 192.168.6.1 255.255.255.224
+  ip add 10.6.41.1 255.255.255.248
   no shut
   end
 
@@ -247,13 +332,25 @@ conf t
  int e0/0
   ip add 10.5.31.6 255.255.255.248
   no shut
+ ip dhcp excluded-add 192.168.1.1 192.168.1.100
+ ip dhcp excluded-add 192.168.1.200 192.168.1.254
+ ip dhcp pool guestpoola
+  network 192.168.1.0 255.255.255.0
+  default-router 192.168.1.254
+  domain-name ccnp.com
+  dns-server 10.5.31.6
   end
 
 @S4
 conf t
  hostname S4
  int e0/0
-  ip add 10.5.31.6 255.255.255.248
+  ip add 10.6.41.6 255.255.255.248
   no shut
+ ip dhcp excluded-add 192.168.1.1 192.168.1.199
+ ip dhcp pool guestpoolb
+  network 192.168.1.0 255.255.255.0
+  default-router 192.168.1.254
+  domain-name ccnp.com
+  dns-server 10.6.41.6
   end
-
