@@ -22,30 +22,31 @@ TASKS
 
 R1, R3, S1, and S2 are inaccessible. 
 
-IP addressing is preconfigured. 
-R1 & R3 are configured for OSPF. 
+IP addressing is has been assigned, and ospf is preconfigure for D1, R1, and R3.
 
-Additionally, configure DHCP Snooping and Dynamic ARP inspection on D1 to prevent Rogue DHCP Servers from poisoning the network. 
+The network has no security features and is vulnerable to attacks. 
+Configure DHCP Snooping and Dynamic ARP inspection on D1 to prevent Rogue DHCP Servers from poisoning the network. 
 
-*NOTE: Do not shutdown any ports on D1.
+*NOTE: Do not remove any configurations on any devices, and do not shutdown any ports on D1.
 
 1. Configure D1 for DHCP Snooping
  - Enable DHCP Snooping for VLAN 1.
  - Disable DHCP Option-82 data insertion.
  - Enable DHCP Snooping MAC address verification.
- - Enable trusted interfaces.
- - Set limit rate to 10 for untrusted ports.
+ - Assign trusted interfaces.
+ - Set limit rate to 10 for untrusted ports (specifically unused ports).
  - Set errdisable recovery interval of 5 mins
 
 2. Configure D1 for Dynamic Arp Inspection.
- - Enable Dynamic Arp Inspection for both vlan 30 and 50
+ - Enable Dynamic Arp Inspection for vlan 1
  - Enable trusted interface
- - Set limit rate to 25 for untrusted ports with a burst interval of 2
+ - Set limit rate to 25 for untrusted ports with a burst interval of 2 (specifically unused ports).
  - Set errdisable recovery interval 5 mins.
  - Enable all validation checks
 
 3. Configure OSPF on the routers.
- - Advertise all Connected routes.
+ - Advertise loopback ips on the lowest connected area.
+ - Use the same process-id on D1 for all routers.
  - Set the IP address on loopback 10 as the router ID for all routers.
  - All routers must not send hello packets out to their loopback interfaces.
  - R1 is trying to form a P2P connection with R5, complete the configuration on R5 so that they form an adjacency.
@@ -54,9 +55,10 @@ Additionally, configure DHCP Snooping and Dynamic ARP inspection on D1 to preven
  - On the link between R4 and R6, set their ospf hello and dead timers to 12 and 20 seconds respectively.
  - Configure D1 to be in the DROTHER state on Area 0
 
-4. On S3 and S4, configure both a floating static route to reach the network between D1 and P1.
+4. On S3 and S4, configure both a static network route to reach the network between D1 and P1.
  - The route must have an administrative distance that is 20 units higher than OSPF.
  - On S4, the route must not define a next-hop.
+ - Do not set a default route on S3 and S4
 
 5. Configure D1 to relay DHCP discover messages to S4.
 
@@ -74,7 +76,6 @@ Use the "show cdp neighbor" command.
 show cdp neighbor
 
 We find out that:
-D1 e0/0 = e0/0 P1
 D1 e0/3 = e0/0 R1
 D1 e1/0 = e0/0 R2
 D1 e1/1 = e0/0 R3
@@ -84,12 +85,12 @@ D1 e1/2 = e0/0 R4
  - Enable DHCP Snooping for VLAN 1.
  - Disable DHCP Option-82 data insertion.
  - Enable DHCP Snooping MAC address verification.
- - Enable trusted interfaces.
- - Set limit rate to 10 for untrusted ports.
+ - Assign trusted interfaces.
+ - Set limit rate to 10 for untrusted ports (specifically unused ports).
  - Set errdisable recovery interval of 5 mins
 
 @D1
-conf 
+conf t
  !- turn on dhcp snooping
  ip dhcp snooping
  !
@@ -97,7 +98,7 @@ conf
  ip dhcp snooping vlan 1
  !
  !- disable dhcp option-82
- no ip dhcpp snooping information option
+ no ip dhcp snooping information option
  !
  !- enable dhcp snoopnig mac address verification
  ip dhcp snooping verify mac-address
@@ -107,16 +108,19 @@ conf
  errdisable recover interval 300
  !
  !- enable trusted interfaces on ports connected to routers
- int range e0/0,e0/3,e1/0-2
+ int range e0/1,e0/3,e1/0-2
   ip dhcp snooping trust
+ int range e0/0,e0/2,e1/3
   ip dhcp snooping limit rate 10
   end
+
+Verify: Use the "show ip dhcp snooping" command to verify trusted ports and rate limiting.
 
 
 2. Configure D1 for Dynamic Arp Inspection.
  - Enable Dynamic Arp Inspection for vlan 1
  - Enable trusted interface
- - Set limit rate to 25 for untrusted ports with a burst interval of 2
+ - Set limit rate to 25 for untrusted ports with a burst interval of 2 (specifically unused ports).
  - Set errdisable recovery interval 5 mins.
  - Enable all validation checks
 
@@ -126,11 +130,11 @@ conf t
  ip arp inspection vlan 1
  !
  !- enable trusted interface
- int range e0/0,e0/3,e1/0-2
+ int range e0/1,e0/3,e1/0-2
   ip arp inspection trust
  !
  !- set limit rate and burst interfal for untrusted ports (these will be the unused ports)
- int range e0/1-2,e1/3
+ int range e0/0,e0/2,e1/3
   ip arp inspection limit rate 25 burst interval 2 
  !
  !- set errdisable recovery interval
@@ -141,39 +145,246 @@ conf t
  ip arp inspection validate dst-mac ip src-mac
  end
 
+Verify: Use the "show ip arp inspection interfaces" command to verify trusted ports, rate limiting, and burst interval configurations.
+
 
 3. Configure OSPF on the routers.
  - Advertise all Connected routes.
+ - Use the same process-id on D1 for all routers.
+ - Advertise loopback ips on the lowest connected area.
+ - Advertise the network between R5 and S3 under area 15
+ - Advertise the network between R6 and S4 under area 46
  - Set the IP address on loopback 10 as the router ID for all routers.
  - All routers must not send hello packets out to their loopback interfaces.
  - R1 is trying to form a P2P connection with R5, complete the configuration on R5 so that they form an adjacency.
  - R3 must always the be the DR on area 36.
  - On the link between R2 and R5, make sure R5 has the same hello and dead timers as R2.
  - On the link between R4 and R6, set their ospf hello and dead timers to 12 and 20 seconds respectively.
- - Configure D1 to be in the DROTHER state on Area 0
+ - Set the link between R4 and R6 as P2P.
+ - Configure D1 to be in the DROTHER role on Area 0
 
-Use the "show ip interface brief" and "show run" command to identify ip addresses and subnetmask.
+Use the "show ip interface brief" and "show run" command to identify ip addresses and subnet masks.
+
+Start by identifying the ospf process-id used on D1.
+
+@D1
+show ip protocols
+
+We find out that the process-id used is 1
+
+Since we are advertising all connected routes on routers, we can use the "show ip route | inc C" command to show connected routes only.
+Do not forget to use the loopback 10 ip as the router-id for all routers.
 
 @R2
+!- check the ip address on loopback 10
+show ip int brief
+!
+!- check the connected routes
+show ip route | inc C
+!
+!- finally apply ospf configurations
 conf t
  router ospf 1
   router-id 2.2.10.10
-  network 
-    
+  network 2.2.1.1 0.0.0.0 area 0
+  network 2.2.5.0 0.0.0.255 area 0
+  network 2.2.10.0 0.0.0.31 area 0
+  network 10.1.2.64 0.0.0.63 area 0
+  network 10.2.5.0 0.0.0.127 area 25
+  !
+  !- set loopback ips as passive interface to not send ospf hellos
+  passive-interface lo1
+  passive-interface lo5
+  passive-interface lo10
+  end
+
+
+@R5
+show ip int brief
+show ip route | inc C
+conf t
+ router ospf 1
+  router-id 5.5.10.10
+  network 5.5.1.1 0.0.0.0 area 15
+  network 5.5.5.0 0.0.0.255 area 15
+  network 5.5.10.0 0.0.0.31 area 15
+  network 10.1.5.0 0.0.0.3 area 15
+  network 10.2.5.0 0.0.0.127 area 25
+  network 10.5.31.0 0.0.0.7 area 15
+  passive-interface lo1
+  passive-interface lo5
+  passive-interface lo10
+  !
+ !
+ !- R1 is trying to form a P2P connection with R5, complete the configuration on R5 so that they form an adjacency.
+ int e0/0
+  ip ospf network point-to-point
+  end
+
+It is also intructed to match the hello and dead timers of R2 to R5.
+Use the "show ip ospf interface e0/2" command to check what is the hello and dead timers on R2's e0/2 interface, which connects to R5.
+
+@R2
+show ip ospf interface e0/2
+
+We find out the following:
+
+On interface e0/2
+	Hello 30
+	Dead 40
+
+Apply these settings to R5's interface that is connects to R2.
+
+@R5
+conf t
+ int e0/1
+  ip ospf hello-interval 30
+  ip ospf dead-interval 40
+  end
+
+
+It is also instructed to set the hello and dead timers on the link between R4 and R6 and their network as P2P.
 
 @R4
+show ip int brief
+show ip route | inc C
+conf t
+ no router ospf 1
+ router ospf 1
+  router-id 4.4.10.10
+  network 4.4.1.1 0.0.0.0 area 46
+  network 4.4.5.0 0.0.0.255 area 46
+  network 4.4.10.0 0.0.0.31 area 46
+  network 10.1.4.56 0.0.0.7 area 46
+  network 10.4.6.0 0.0.0.3 area 46
+  passive-interface lo1
+  passive-interface lo5
+  passive-interface lo10
+ !
+ int e0/2
+  !- set P2P network
+  ip ospf network point-to-point
+  !
+  !- set hello timer to 12
+  ip ospf hello-interval 12
+  !
+  !- set dead timer to 20
+  ip ospf dead-interval 20
+  end
+
+@R6
+show ip int brief
+show ip route | inc C
+conf t
+ no router ospf 1
+ router ospf 1
+  router-id 6.6.10.10
+  network 6.6.1.1 0.0.0.0 area 36
+  network 6.6.5.0 0.0.0.255 area 36
+  network 6.6.10.0 0.0.0.31 area 36
+  network 10.3.6.0 0.0.0.127 area 36
+  network 10.4.6.0 0.0.0.3 area 46
+  network 10.6.41.0 0.0.0.7 area 36
+  passive-interface lo1
+  passive-interface lo5
+  passive-interface lo10
+ int e0/0
+  !- make sure R3 will always be the DR for area 36.
+  !- since R3 is inaccessible we can only manipulate R6
+  ip ospf priority 0
+ int e0/1
+  !- set P2P network
+  ip ospf network point-to-point
+  !
+  !- set hello timer to 12
+  ip ospf hello-interval 12
+  !
+  !- set dead timer to 20
+  ip ospf dead-interval 20
+  end
 
 
-4. On S3 and S4, configure both a floating static route to reach the network between D1 and P1.
- - The route must have an administrative distance that is 20 units higher than OSPF.
+Finally configure D1 to be the DROTHER on Area 0
+
+@D1
+conf t
+ int range vlan30,vlan40
+  ip ospf priority 0
+  end
+
+Verify on R2 and R4
+
+@R2,R4
+show ip ospf neigh
+
+
+Note: Use the "clear ip ospf process" command to verify the correct role and states of the routers.
+
+@All routers
+clear ip ospf process
+yes
+show ip ospf neigh
+
+
+4. On S3 and S4, configure both a static network route to reach the network between D1 and P1.
+ - Both routes must have an administrative distance that is 20 units higher than OSPF.
+ - On S3, the route must define as next-hop.
  - On S4, the route must not define a next-hop.
+ - Do not set a default route on S3 and S4
 
+First, verify the network ip between P1 and D1
+@D1
+show run
+
+We find out that the e0/0 interface for D1 is set to VLAN 1, which means P1 is part of the 192.168.1.1/24 network.
+
+@S3
+conf t
+ !- OSPF administrative distance is 110 therefore 20 units higher is 130.
+ ip route 192.168.1.0 255.255.255.0 10.5.31.1 130
+ end
+
+@S4
+conf t
+ !- to set a route without defining a next-hop, specify the interface where the device needs to send out their packets to.
+ ip route 192.168.1.0 255.255.255.0 e0/0 130
+ end
+ 
+Verify by pinging D1's VLAN 1 IP
+
+@S3,S4
+ping 192.168.1.254
+ 
+ 
 5. Configure D1 to relay DHCP discover messages to S4.
+
+@D1
+conf t
+ int vlan 1
+  ip helper-address 10.6.41.6
+  end
 
 6. P1 must be a DHCP client.
  - Upon receiving an IP, P1 must have D1 as its default gateway.
 	Do not manually configure the default-gateway of P1.
- 
+
+@P1
+conf t
+ int e0/0
+  ip add dhcp
+  end
+
+Verify by using the "show ip int brief" command and "show ip route" to see if P1 got the address from S4 and not any rogue dhcp servers like S1 and S2.
+
+@P1
+show ip int brief
+show ip route
+
+Additionally use the "show ip arp inspection" command on D1 to check for DHCP Dropped packets.
+
+@D1
+show ip arp inspection
+
 
 ###########
 
@@ -244,7 +455,7 @@ conf t
   domain-name yougothacked.com
   dns-server 192.168.1.100
   exit
- no cdp enable
+ no cdp run
   end
 
 @S2
@@ -258,12 +469,25 @@ conf t
   default-router 192.168.1.200
   domain-name yougothacked.com
   dns-server 192.168.1.200
- no cdp enable
+ no cdp run
   end
 
 @D1
 conf t
  hostname D1
+ vlan 20
+  name Sector A
+  exit
+ vlan 30
+  name Sector B
+  exit
+ vlan 40
+  name Sector C
+  exit
+ vlan 50
+  name Sector D
+  exit
+ ip routing
  int lo 1
   ip add 11.1.1.1 255.255.255.255
  int lo 5
@@ -273,24 +497,49 @@ conf t
  int vlan 1
   ip add 192.168.1.254 255.255.255.0
   no shut
- int range e0/3,e1/0-2
-  no sw
- int e0/3
+ int vlan 20
   !- connect to R1
   ip add 10.1.1.1 255.255.255.128
   no shut
- int e1/0
+ int vlan 30
   !- connect to R2
   ip add 10.1.2.65 255.255.255.192
   no shut
- int e1/1
+ int vlan 40
   !- connect to R3
   ip add 10.1.3.17 255.255.255.240
   no shut
- int e1/2
+ int vlan 50
   !- connect to R4
   ip add 10.1.4.61 255.255.255.248
   no shut
+ int e0/3
+  sw mo ac
+  sw ac vlan 20
+ int e1/0
+  sw mo ac
+  sw ac vlan 30
+ int e1/1
+  sw mo ac
+  sw ac vlan 40
+ int e1/2
+  sw mo ac
+  sw ac vlan 50
+  no ip http server
+  no ip http secure-server
+ router ospf 1
+  router-id 11.10.10.10
+  net 11.1.1.1 0.0.0.0 area 0
+  net 11.5.5.5 0.0.0.0 area 0
+  net 11.10.10.10 0.0.0.0 area 0
+  net 192.168.1.0 0.0.0.255 area 0
+  net 10.1.1.1 0.0.0.127 area 15
+  net 10.1.2.64 0.0.0.63 area 0
+  net 10.1.3.16 0.0.0.15 area 0
+  net 10.1.4.56 0.0.0.7 area 46
+  passive-int lo1
+  passive-int lo5
+  passive-int lo10
   end
 
 @R1
@@ -317,6 +566,7 @@ conf t
   net 1.1.5.0 0.0.0.255 area 15
   net 1.1.10.0 0.0.0.31 area 15
   net 10.1.1.0 0.0.0.127 area 15
+  net 10.1.5.0 0.0.0.3 area 15
   passive-interface lo1
   passive-interface lo5
   passive-interface lo10
@@ -337,8 +587,8 @@ conf t
   !- connect to D1
  int e0/2
   ip add 10.2.5.1 255.255.255.128
-  ip ospf hello-timer 30
-  ip ospf dead-timer 40
+  ip ospf hello-interval 30
+  ip ospf dead-interval 40
   no shut
   !- connect to R5
   end
@@ -360,13 +610,14 @@ conf t
   ip add 10.3.6.1 255.255.255.128
   no shut
   !- connect to R6
+ no router ospf 1
  router ospf 1
   router-id 3.3.10.10
   net 3.3.1.1 0.0.0.0 area 0
   net 3.3.5.0 0.0.0.255 area 0
   net 3.3.10.0 0.0.0.31 area 0
   net 10.1.3.16 0.0.0.15 area 0
-  net 10.3.6.0 0.0.0.128 area 36
+  net 10.3.6.0 0.0.0.127 area 36
   passive-int lo1
   passive-int lo5
   passive-int lo10
@@ -412,6 +663,7 @@ conf t
   !- connect to S3
   ip add 10.5.31.1 255.255.255.248
   no shut 
+  end
 
 @R6
 conf t
@@ -425,6 +677,7 @@ conf t
  int e0/0
   !- connect to R3
   ip add 10.3.6.126 255.255.255.128
+  ip ospf priority 2
   no shut
  int e0/1
   !- connect to R4
@@ -464,3 +717,8 @@ conf t
   domain-name ccnp.com
   dns-server 10.6.41.6
   end
+
+@P1
+conf t
+ hostname P1
+ end
