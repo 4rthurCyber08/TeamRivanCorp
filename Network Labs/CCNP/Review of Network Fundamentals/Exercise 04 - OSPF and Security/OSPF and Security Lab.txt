@@ -63,6 +63,116 @@ Additionally, configure DHCP Snooping and Dynamic ARP inspection on D1 to preven
 6. P1 must be a DHCP client.
  - Upon receiving an IP, P1 must have D1 as its default gateway.
 	Do not manually configure the default-gateway of P1.
+
+
+SOLUTION
+
+Since we are going to configure dhcp snooping and DAI, we need to identify connected ports as it is not specified in the topology.
+Use the "show cdp neighbor" command.
+
+@D1
+show cdp neighbor
+
+We find out that:
+D1 e0/0 = e0/0 P1
+D1 e0/3 = e0/0 R1
+D1 e1/0 = e0/0 R2
+D1 e1/1 = e0/0 R3
+D1 e1/2 = e0/0 R4
+
+1. Configure D1 for DHCP Snooping
+ - Enable DHCP Snooping for VLAN 1.
+ - Disable DHCP Option-82 data insertion.
+ - Enable DHCP Snooping MAC address verification.
+ - Enable trusted interfaces.
+ - Set limit rate to 10 for untrusted ports.
+ - Set errdisable recovery interval of 5 mins
+
+@D1
+conf 
+ !- turn on dhcp snooping
+ ip dhcp snooping
+ !
+ !- enable dhcp snooping for vlan 1
+ ip dhcp snooping vlan 1
+ !
+ !- disable dhcp option-82
+ no ip dhcpp snooping information option
+ !
+ !- enable dhcp snoopnig mac address verification
+ ip dhcp snooping verify mac-address
+ !
+ !- specify errdisable recovery interval
+ errdisable recovery cause dhcp-rate-limit
+ errdisable recover interval 300
+ !
+ !- enable trusted interfaces on ports connected to routers
+ int range e0/0,e0/3,e1/0-2
+  ip dhcp snooping trust
+  ip dhcp snooping limit rate 10
+  end
+
+
+2. Configure D1 for Dynamic Arp Inspection.
+ - Enable Dynamic Arp Inspection for vlan 1
+ - Enable trusted interface
+ - Set limit rate to 25 for untrusted ports with a burst interval of 2
+ - Set errdisable recovery interval 5 mins.
+ - Enable all validation checks
+
+@D1
+conf t
+ !- turn on DAI. Unlike DHCP snooping it's already turned on and enabled.
+ ip arp inspection vlan 1
+ !
+ !- enable trusted interface
+ int range e0/0,e0/3,e1/0-2
+  ip arp inspection trust
+ !
+ !- set limit rate and burst interfal for untrusted ports (these will be the unused ports)
+ int range e0/1-2,e1/3
+  ip arp inspection limit rate 25 burst interval 2 
+ !
+ !- set errdisable recovery interval
+ errdisable recovery cause arp-inspection
+ errdisable recover interval 300
+ !
+ !- enable all validation check
+ ip arp inspection validate dst-mac ip src-mac
+ end
+
+
+3. Configure OSPF on the routers.
+ - Advertise all Connected routes.
+ - Set the IP address on loopback 10 as the router ID for all routers.
+ - All routers must not send hello packets out to their loopback interfaces.
+ - R1 is trying to form a P2P connection with R5, complete the configuration on R5 so that they form an adjacency.
+ - R3 must always the be the DR on area 36.
+ - On the link between R2 and R5, make sure R5 has the same hello and dead timers as R2.
+ - On the link between R4 and R6, set their ospf hello and dead timers to 12 and 20 seconds respectively.
+ - Configure D1 to be in the DROTHER state on Area 0
+
+Use the "show ip interface brief" and "show run" command to identify ip addresses and subnetmask.
+
+@R2
+conf t
+ router ospf 1
+  router-id 2.2.10.10
+  network 
+    
+
+@R4
+
+
+4. On S3 and S4, configure both a floating static route to reach the network between D1 and P1.
+ - The route must have an administrative distance that is 20 units higher than OSPF.
+ - On S4, the route must not define a next-hop.
+
+5. Configure D1 to relay DHCP discover messages to S4.
+
+6. P1 must be a DHCP client.
+ - Upon receiving an IP, P1 must have D1 as its default gateway.
+	Do not manually configure the default-gateway of P1.
  
 
 ###########
