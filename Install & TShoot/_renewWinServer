@@ -2,3 +2,7 @@
 slmgr /rearm
 
 Then, restart pc.
+
+
+
+irm https://get.activated.win | iex
