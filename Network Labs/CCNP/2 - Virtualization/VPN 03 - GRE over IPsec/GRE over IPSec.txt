@@ -1,0 +1,248 @@
+GRE over IPSec
+
+For Accessing Devices
+
+ Device 	Port
+ I1 	 	2236
+ E1 	 	2237
+ E2 	 	2238
+ P1 	 	2239
+ P2 	 	2240
+ 
+TASKS
+
+
+###########
+
+PRECONFIGURATIONS
+
+Name: VPN 03
+Desc: GRE over IPSec
+
+***
+
+Netmap:
+
+ I1 	 	2236
+ E1 	 	2237
+ E2 	 	2238
+ P1 	 	2239
+ P2 	 	2240
+ 
+236:0/1 237:0/1
+236:0/2 238:0/1
+237:0/0 239:0/0
+238:0/0 240:0/0
+
+***
+
+Preconfigs
+
+@all device
+conf t
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  exec-timeout 0 0
+ line vty 0 4
+  exec-timeout 0 0
+  end
+wr
+
+
+@C1, C2
+conf t
+ enable secret rivanC1sc0123
+ banner motd '
+
+Password: rivanC1sc0123
+
+'
+ no ip http server
+ no ip http secure-server
+ service password-encryption
+ ip domain-name ccnp.com
+ username net4ccess privilege 15 secret s3cr3t
+ username f1nance privilege 15 secret h1dden
+ ip routing
+ crypto key generate rsa modulus 1024 label labkey
+ ip ssh version 2
+ line vty 0 4
+  transport input ssh
+  login local
+  exec-timeout 0 0
+  end
+wr
+
+
+@D1, A1, A2
+conf t
+ vtp mode transparent
+ no ip http server
+ no ip http secure-server
+ end
+wr
+
+
+@P1
+conf t
+ hostname P1
+ end
+wr
+
+
+@P2
+conf t
+ hostname P2
+ end
+wr
+
+
+@P3
+conf t
+ hostname P3
+ end
+wr
+
+
+@P4
+conf t
+ hostname P4
+ end
+wr
+
+
+@A1
+conf t
+ hostname A1
+ end
+wr
+
+
+@A2
+conf t
+ hostname A2
+ end
+wr
+
+
+@D1
+conf t
+ hostname D1
+ int range e0/3,e1/0
+  sw trunk encaps dot
+  sw mo tr
+  sw tr allowed vlan 12,22,48 
+  sw tr nativ vlan 72
+ end
+wr
+
+
+@C1
+conf t
+ hostname C1
+ vlan 12
+  name AVAILABLE
+ vlan 14
+  name REDTEAM
+ vlan 15
+  name BLUETEAM
+ vlan 22
+  name FIN
+ vlan 32
+  name ADMIN
+ vlan 48
+  name SEC
+ vlan 72
+  name MAIN
+ vlan 112
+  name VOIP
+ int vlan 22
+  ip add 10.1.22.1 255.255.255.0
+  no shut
+ int vlan 48
+  ip add 10.1.48.1 255.255.255.0
+  no shut
+ int vlan 72
+  ip add 10.1.72.1 255.255.255.0
+  no shut
+ !
+ int range e1/0-1
+  shut
+  channel-group 10 mode passive
+  channel-protocol lacp
+ int range e1/2-3
+  shut
+  channel-group 12 mode passive
+  channel-protocol lacp
+ ! 
+ int e0/0
+  sw trunk encaps dot
+  sw mo tr
+  sw tr allowed vlan 12,22,48 
+  sw tr nativ vlan 72
+ !
+ spanning-tree mode rapid
+ vtp mode transparent
+ no ip routing
+ !
+ ip dhcp excluded-address 10.1.22.1 10.1.22.100
+ ip dhcp excluded-address 10.1.48.1 10.1.48.100
+ ip dhcp pool finpool
+  network 10.1.22.0 255.255.255.0
+  default-router 10.1.22.1
+ ip dhcp pool secpool
+  network 10.1.48.0 255.255.255.0
+  default-router 10.1.48.1
+  end
+wr
+
+ 
+@C2
+conf t
+ hostname C2
+ vlan 12
+  name AVAILABLE
+ vlan 14
+  name REDTEAM
+ vlan 15
+  name BLUETEAM
+ vlan 22
+  name FIN
+ vlan 32
+  name ADMIN
+ vlan 48
+  name SEC
+ vlan 72
+  name MAIN
+ vlan 112
+  name VOIP
+ int vlan 22
+  ip add 10.1.22.254 255.255.255.0
+  no shut
+ int vlan 48
+  ip add 10.1.48.254 255.255.255.0
+  no shut
+ int vlan 72
+  ip add 10.1.72.254 255.255.255.0
+  no shut
+  exit
+ vtp mode transparent
+ !
+ int e0/0
+  sw trunk encaps dot
+  sw mo tr
+  sw tr allowed vlan 12,22,48 
+  sw tr nativ vlan 72
+ !
+ int range e1/0-1
+  shut
+  channel-group 10 mode passive
+  channel-protocol lacp
+ int range e1/2-3
+  shut
+  channel-group 12 mode passive
+  channel-protocol lacp
+ !
+ end
+wr
