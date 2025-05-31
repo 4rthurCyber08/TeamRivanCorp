@@ -1,0 +1,122 @@
+Lab Name: Automation
+Description: Python, Ansible and EEM Lab
+Time: 0
+
+---------------| Netmap:
+262:0/0 900:0/0
+262:0/1 264:0/0
+262:0/2 268:0/0
+262:0/3 267:0/1
+
+267:0/0 263:0/0
+267:0/2 271:0/0
+271:0/1 269:0/1
+272:0/0 268:0/1
+272:0/1 270:0/1
+269:0/0 265:0/0
+270:0/0 266:0/0
+
+
+---------------| IPv4 Mapping
+
+
+
+---------------| Device Preconfig:
+
+!@all devices
+conf t
+ no logging cons
+ no ip domain-lookup
+ line cons 0
+  exec-timeout 0 0
+  exit
+ line vty 0 4
+  no login
+  exec-timeout 0 0
+  transport input all
+  exit
+ no ip http server
+ no ip http secure-server
+ !
+ alias exec bp show ip int brief | ex una
+ alias exec sr show ip route
+ alias exec cn show cdp nei
+ alias exec sp show ip protocols
+ !
+ alias exec bp6 show ipv6 int brief | exc down
+ alias exec sr6 show ipv6 route
+ alias exec sbs6 show bgp ipv6 summ
+ alias exec sc show run | sec
+ end
+
+
+!@D1
+conf t
+ hostname D1
+ end
+wr
+
+!@F1
+conf t
+ hostname F1
+ end
+wr
+
+!@S1
+conf t
+ hostname S1
+ end
+wr
+
+!@S2
+ hostname S2
+ end
+wr
+
+!@S3
+conf t
+ hostname S3
+ end
+wr
+
+!@S4
+conf t
+ hostname S4
+ end
+wr
+
+!@E1
+conf t
+ hostname E1
+ end
+wr
+
+ !@E2
+conf t
+ hostname E2
+ end
+wr
+
+!@E3
+conf t
+ hostname E3
+ end
+wr
+
+!@F1
+conf t
+ hostname F1
+ end
+wr
+
+!@R1
+conf t
+ hostname R1
+ end
+wr
+
+!@I1
+conf t
+ hostname I1
+ end
+wr
