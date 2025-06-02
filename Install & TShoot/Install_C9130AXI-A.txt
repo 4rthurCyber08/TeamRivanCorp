@@ -1,0 +1,197 @@
+Configure and Update the C9130 AXI-A
+
+STEP 1. Download the latest image from 'software.cisco.com'
+
+Direct Link: https://software.cisco.com/download/home/286323627/type/286323077/release/17.15.3
+
+Download the image: C9800-AP-universalk9.17.15.03 (Latest as of 6/2/2025)
+
+***********
+
+
+STEP 2. Enable TFTP on the PC
+
+If TFTP is not installed, open Server Manager.
+	Manage > Add Roles and Features
+	
+	Before you Begin: Next
+	Installation Type: Next
+	Server Selection: Next
+	Sever Roles: Next
+	Features: 
+		Scroll Down and select 'TFTP Client'
+		Then, Next
+		
+	Confirmation: Install
+
+Run SolarWinds TFTP Server
+	File > Configure
+	
+	Under General Tab
+		Storage - Where tftp clients will access the files.
+	
+	Server Bindings Tab
+		Currently Available Addresses
+			Select 10.69.1.10
+			
+			It will then appear on Custom Server Bindings.
+			
+			Select OK
+
+Go back to the downloaded image (C9800-AP-universalk9.17.15.03) and extract the ff:
+	- readme.txt
+	- ap1g6a
+	- C9800-AP-iosxe-wlc.bin
+
+If you check the readme.txt, 
+	The model of the device (C9130-AXI) will use the 'ap1g6a' file and the 'C9800-AP-iosxe-wlc'.
+	Transfer the files (ap1g6a, C9800-AP-iosxe-wlc) to the tftp-root directory.
+	
+***********
+
+
+STEP 3. Configure IP addressing and connectivity.
+
+Modify the PCs IP address
+	Real Network Adapter
+	IP: 10.69.1.10 /24
+
+@cmd
+route add 10.69.0.0 mask 255.255.0.0 10.69.1.4
+
+
+***Configure the Switch
+
+@Switch
+conf t
+ hostname rivansw-69
+ enable secret pass
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  password pass
+  no login
+  exec-timeout 0 0
+ line vty 0 14
+  password pass
+  no login
+  exec-timeout 0 0
+ banner motd '
+
+Password/Secret: pass
+
+'
+ vlan 10
+  name wifivlan
+ int vlan 1
+  ip add 10.69.1.4 255.255.255.0
+  no shut
+ int vlan 10
+  ip add 10.69.10.4 255.255.255.0
+  no shut
+ int g0/2
+  sw mo access
+  sw acc vlan 10
+ ip routing
+ !
+ !
+wr
+
+
+***Configure AP
+
+Reset AP 
+	1. Connect a serial cable on the AP's console port and access it on SecureCRT.
+		There will be no connection because the AP is off, but keep the window on.
+	2. Connect on end of a UTP cable on the switch.
+	3. Click and hold the mode button on the AP (A small hole beside the console) then attatch the other end of the UTP cable to its POE port.
+		By now SecureCRT should display the console of the AP, otherwise simply reconnect to console.
+	4. Hold the mode button for 20 seconds, then release.
+	
+	5. Wait for AP to reset.
+
+***********
+
+
+Step 2 Configure IP Connectivity
+
+@AP
+Default username: cisco
+Default password: Cisco
+Default enable: Cisco
+
+@AP
+capwap ap hostname rivanap-69
+capwap ap ip 10.69.1.69 255.255.255.0 10.69.1.4 
+
+
+Verify Connectivity:
+
+@AP
+ping 10.69.1.10
+
+***********
+
+
+Step 3 Copy and Install the latest image we placed in the tftp-root folder.
+
+ap-type ewc-ap tftp://10.69.1.10/ap1g6a tftp://10.69.1.10/C9800-AP-iosxe-wlc.bin
+
+
+Wait for reboot
+
+At this point the AP will have the usual ios cli configurations.
+
+@AP
+(yes/no) no
+Enable Secret: rivan@C1sc0123
+Confirm Secret: rivan@C1sc0123
+Do not save: 0
+
+
+Apply basic configurations
+
+@AP
+conf t
+ hostname rivanap-69
+ enable secret pass
+ service password-encryption
+ line cons 0
+  password pass
+  no login
+  exec-timeout 0 0
+ line vty 0 14
+  password pass
+  no login
+  exec-timeout 0 0
+  exit
+ banner motd '
+
+Password/Secret: pass
+HTTPS Login:
+ Username: admin
+ Password: pass
+
+'
+ int g0
+  ip add 10.69.10.69 255.255.255.0
+  no shut
+ ip default-gateway 10.69.10.4
+  end
+
+Verify connectivity
+
+@AP
+ping 10.69.1.10
+
+
+Enable Web Interface
+
+@AP
+conf t
+ username admin privilege 15 secret pass
+ ip http secure-server
+ ip http authentication local
+ end
+wr
+
