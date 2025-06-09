@@ -1,0 +1,17 @@
+Set metric
+
+1. Win + R, ncpa.cpl
+
+2. Wifi > Properties > 
+   Internet Protocol Version 4 (IPv4) > Properties > 
+   Advance > Uncheck Automatic Metric > 
+   Set Metric: 10
+
+   Confirm: Ok, Ok, Close
+
+3. Tunay Na LAN (Network Adapter) >
+   Internet Protocol Version 4 (IPv4) > Properties > 
+   Advance > Uncheck Automatic Metric > 
+   Set Metric: 1
+
+   Confirm: Ok, Ok, Close
