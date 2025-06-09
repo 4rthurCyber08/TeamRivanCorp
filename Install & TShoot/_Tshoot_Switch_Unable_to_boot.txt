@@ -1,0 +1,3 @@
+Switch: copy xmodem: flash:[filename]
+
+SecureCRT > Transfer > xmodem > specify file
