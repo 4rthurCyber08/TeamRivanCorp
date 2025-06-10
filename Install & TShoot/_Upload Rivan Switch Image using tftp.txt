@@ -1,0 +1,83 @@
+******
+Set Bootstrap Config
+
+@Switch
+conf t
+ hostname Main-Switch
+ enable secret pass
+ line cons 0
+  password pass
+  no login
+  exec-timeout 0 0
+ line vty 0 14
+  transport input all
+  password pass
+  no login
+  exec-timeout 0 0
+ !
+ int vlan 1
+  ip add 10.72.1.2 255.255.255.0
+  no shut
+  end
+
+
+Make sure the PC has connection to the switch and the IP address of its Network Adapter is part of the same subnet as the IP on VLAN 1.
+
+@PC
+ - Press Windows + R
+ - Open: ncpa.cpl
+ - Right-click 'Tunay Na LAN'(Network Adapter > Select 'Properties'
+ - Select 'Internet Protocol Version 4(TCP/IPv4)' > Select 'Properties'
+ - Use the ff settings:
+     > Use the following IP address
+       - IP address: 10.72.1.10
+       - Subnet Mask: 255.255.255.0
+       - Gateway: NO GATEWAY
+     > Use the following DNS server addresses
+       - Preferred DNS Server: 127.0.0.1
+
+     > Select 'Adanced...'
+       > Uncheck 'Automatic Metric'
+         - Interface metric: 1
+     
+     > Confirm the settings:
+       > Ok
+       > Ok
+       > Close
+
+******
+Setup the TFTP Server
+
+Download and install a TFTP Application (Such as Solarwinds, TFTpd64, etc)
+
+On Solarwinds
+- Select 'File' > 'Configure'
+    Under the 'General Tab', take note of the Storage > TFTP Server Root Directory.
+      This is where the server will contain their files.
+
+    Then, go to 'Server Bindings' Tab
+      On the 'Currently Available Addresses', select the IP address of the PC (10.72.1.10)
+      It must appear on the Server Binding Section.
+
+- Finally, Select 'OK'
+
+Now our tftp server is running and operational. (Make sure to not close the app)
+
+
+******
+Upload the device image to the TFTP Server
+
+Connect to the switch using a serial and telnet connection
+
+On the telnet session, enter the following commands:
+
+@Switch
+archive upload-sw tftp://10.72.1.10/c3560-ipservicesk9-mz.150-2.SE9.bin
+
+*Possible Errors: 
+ - Make sure to assign a filename on the specified path. Otherwise you will encounter an "Illegal Operaton Error"
+ - Have a TFTP server running on the PC (SolarWinds, TFTPD64, etc.)
+     - TFTP uses port 69.
+     - Bind the IP address of your device as a TFTP Server IP
+
+
