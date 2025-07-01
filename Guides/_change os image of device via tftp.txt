@@ -1,0 +1,153 @@
+******
+Set Bootstrap Config
+
+@Switch
+conf t
+ hostname Upgrade-Switch
+ enable secret pass
+ line cons 0
+  password pass
+  no login
+  exec-timeout 0 0
+ line vty 0 14
+  transport input all
+  password pass
+  no login
+  exec-timeout 0 0
+ !
+ int vlan 1
+  ip add 10.72.1.2 255.255.255.0
+  no shut
+  end
+
+
+Make sure the PC has connection to the switch and the IP address of its Network Adapter is part of the same subnet as the IP on VLAN 1.
+
+@PC
+ - Press Windows + R
+ - Open: ncpa.cpl
+ - Right-click 'Tunay Na LAN'(Network Adapter > Select 'Properties'
+ - Select 'Internet Protocol Version 4(TCP/IPv4)' > Select 'Properties'
+ - Use the ff settings:
+     > Use the following IP address
+       - IP address: 10.72.1.10
+       - Subnet Mask: 255.255.255.0
+       - Gateway: NO GATEWAY
+     > Use the following DNS server addresses
+       - Preferred DNS Server: 127.0.0.1
+
+     > Select 'Adanced...'
+       > Uncheck 'Automatic Metric'
+         - Interface metric: 1
+     
+     > Confirm the settings:
+       > Ok
+       > Ok
+       > Close
+
+******
+Setup the TFTP Server
+
+Download and install a TFTP Application (Such as Solarwinds, TFTpd64, etc)
+
+On Solarwinds
+- Select 'File' > 'Configure'
+    Under the 'General Tab', take note of the Storage > TFTP Server Root Directory.
+      This is where the server will contain their files.
+
+    Then, go to 'Server Bindings' Tab
+      On the 'Currently Available Addresses', select the IP address of the PC (10.72.1.10)
+      It must appear on the Server Binding Section.
+
+- Finally, Select 'OK'
+
+Now our tftp server is running and operational. (Make sure to not close the app)
+
+- Place the image (c3560-ipservicesk9-mz.150-2.SE9) on the TFTP Server directory.
+
+******
+Delete current image of the device.
+
+- Open a telnet instance on the device so that we don't get locked into a session.
+
+
+@Switch
+show boot
+
+BOOT path-list      : flash:c3560-ipbasek9-mz.122-55.SE12/c3560-ipbasek9-mz.122-55.SE12.bin
+Config file         : flash:/config.text
+Private Config file : flash:/private-config.text
+Enable Break        : no
+Manual Boot         : no
+HELPER path-list    : 
+Auto upgrade        : yes
+Auto upgrade path   : 
+NVRAM/Config file
+      buffer size:   524288
+Timeout for Config
+          Download:    0 seconds
+Config Download 
+       via DHCP:       disabled (next boot: disabled)
+
+
+- Grab the BOOT path-list and delete the directory (flash:c3560-ipbasek9-mz.122-55.SE12)
+
+@Switch
+delete flash:flash:c3560-ipbasek9-mz.122-55.SE12
+!
+!Note: Hold enter to delete all contents of the directory.
+
+
+- Finally, upload the image on the tftp server to the flash: of the device.
+
+@Switch
+archive tar /xtract tftp://10.72.1.10/c3560-ipservicesk9-mz.150-2.SE9 flash:
+
+sh flash:
+dir flash:c3560-ipservicesk9-mz.150-2.SE9/
+conf t
+boot system flash:c3560-ipservicesk9-mz.150-2.SE9/c3560-ipservicesk9-mz.150-2.SE9.bin
+
+
+
+
+
+
+
+
+
+conf t
+ip route 10.11.0.0 255.255.0.0 200.0.0.11
+ip route 10.12.0.0 255.255.0.0 200.0.0.12
+ip route 10.21.0.0 255.255.0.0 200.0.0.21
+ip route 10.22.0.0 255.255.0.0 200.0.0.22
+ip route 10.31.0.0 255.255.0.0 200.0.0.31
+ip route 10.32.0.0 255.255.0.0 200.0.0.32
+ip route 10.41.0.0 255.255.0.0 200.0.0.41
+ip route 10.42.0.0 255.255.0.0 200.0.0.42
+ip route 10.72.0.0 255.255.0.0 200.0.0.72
+
+ip route 10.31.0.0 255.255.0.0 10.31.31.4
+
+
+@edge
+conf t
+router ospf 1
+ router-id 42.0.0.1
+ network 42.0.0.1 0.0.0.0 area 0
+ network 200.0.0.0 0.0.0.255 area 0
+ network 10.42.42.0 0.0.0.255 area 0
+ end
+
+@CBABA
+conf t
+ router ospf 1
+ router-id 10.42.42.4
+ network 10.42.0.0 0.0.255.255 area 0
+
+
+@CUCM
+conf t
+ router ospf 1
+ router-id 10.42.100.8
+ network 10.42.100.0 0.0.0.255 area 0
