@@ -1,0 +1,12 @@
+1. Install OpenSSH
+  - Start > Apps & Features > Install OpenSSH
+
+2. Start SSHD service
+
+@powershell 
+Start-Service sshd
+
+Permanently Enable SSH
+
+@powershell
+Set-Service -Name sshd -StartupType 'Automatic'
