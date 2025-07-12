@@ -1,0 +1,61 @@
+AzureAD
+
+1. Install Windows
+2. Powershell
+	rename-computer snoopy69
+	set-netfirewallprofile -name public,private,domain -enabled False
+	get-netfirewallprofile
+	shutdown
+3. Add Hardrives and NetAdapters
+	NVMe 3G
+	NVMe 4G
+	NVMe 5G
+	NVMe 6G
+	NVMe 7G
+	NetAdapter: NAT
+	NetAdapter: NAT
+
+4. Run diskmgmt.msc
+	Initialize Disk: (All Disk) GPT
+	Convert To Dynamic Disk
+		DO NOT INCLUDE Disk 0
+
+	Create Simple Volume on Disk 1
+		Allocate 300mb
+		Drive E:
+		Label: Simple :-(
+	
+	Create Spanned Volume on Disk 1
+		Allocate:
+			Disk 1: 100mb
+			Disk 2: 200mb
+			Disk 3: 300mb
+		Drive: F:
+		Label: Spanned :-(
+
+	Create Stripped Volume on Disk 1
+		Allocate
+			Disk 1: 200mb
+			Disk 2: 200mb
+			Disk 3:	200mb
+		Drive: G:
+		Label: RAIDZERO :-|
+
+	Create Mirrored Volume on Disk 1
+		Allocate
+			Disk 1: 400mb
+			Disk 2: 400mb
+		Drive: H:
+		Label: RAIDONE :->
+	
+	Create RAID 5 Volume on Disk 1
+		Allocate
+			Disk 1: 500mb
+			Disk 2: 500mb
+			Disk 3: 500mb
+			Disk 4: 500mb
+		Drive: I:
+		Label: RAID 5 :-)
+
+
+5. Currupt the following Disks
