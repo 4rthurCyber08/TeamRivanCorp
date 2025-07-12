@@ -1,0 +1,38 @@
+Username: tncadmin
+Password: tnc123
+Gig0 IP: 10.69.10.69
+Gateway: 10.69.10.4
+
+
+@TNCEverWifi-01
+conf t
+ hostname TNCEverWifi-Demo-01
+ enable secret tnc123
+ no logging cons
+ no ip domain lookup
+ !
+ no username admin privilege 15 secret pass
+
+ username tncadmin privilege 15 secret tnc123
+ !
+ ip http authentication local
+ !
+ line cons 0
+  password tnc123
+  login local
+  exec-timeout 0 0
+ line vty 0 14
+  transport input ssh telnet
+  password tnc123
+  login local
+  exec-timeout 0 0
+ !
+ int gig0
+  no shut
+  ip add 10.69.10.69 255.255.255.0
+  exit
+ !
+ no banner motd
+ ip route 0.0.0.0 0.0.0.0 10.69.10.4
+  end
+wr
