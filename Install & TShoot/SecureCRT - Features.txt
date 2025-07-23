@@ -1,0 +1,5 @@
+1. Add Buttons
+
+SecureCRT > View > Button Bar
+
+Right Click the Button Bar and Add Buttons
