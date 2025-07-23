@@ -3,3 +3,8 @@
 SecureCRT > View > Button Bar
 
 Right Click the Button Bar and Add Buttons
+
+
+Export Settings: 
+
+SecureCRT > Tools > Export Settings
