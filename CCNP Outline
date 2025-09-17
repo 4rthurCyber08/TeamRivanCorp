@@ -58,10 +58,14 @@ Day 1
    - Domain Controller
    - 802.1q (Wireless)
 
- - SDN Meraki
-
 
 Day 2
  - SDN Meraki
  - SDWAN
+ - PKI Infrastructure
+   - Key Pair
+   - SSH Auth
+   - Public Key Auth
+   - Certificate Auth
+
  
