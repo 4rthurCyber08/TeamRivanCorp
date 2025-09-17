@@ -1,0 +1,62 @@
+Day 1
+ - Virtual Cloud
+   - RST Hayup
+     - 3-Tier Lab
+
+ - OSI Layer
+   - Physical
+     - Cables, Standards, etc.
+     - Preamble, SFD
+   - Data Link
+     - SRC & DES MAC
+     - STP
+   - Network
+   - Transport
+   - Session
+   - Presentation
+   - Application
+
+ - CoreTaas & CoreBaba
+   - VLANs
+   - VTP
+     - Primary Server (VTP Version 3), Server, Client, Transparent.
+   - Trunking 802.1q
+     - Allowed
+     - Native
+     - Prune
+   - Link Aggregation / Etherchannel
+     - Loadbalancing
+   - STP 802.1D, RSTP 802.1W, MST 802.1S
+     - Backbone Fast
+     - BPDU Guard
+     - Uplink Fast
+     - BPDU Filter
+     - Root Guard
+     - Loop Guard
+   - UDLD (Unidirectional Link Detection) FOC
+   - Port Security & MAC Reservation.
+   - DHCP IPv4
+   - Switching
+
+ - CUCM
+   - Analog
+   - VoIP
+   - SIP
+   - Cisco SCCP
+   - QoS
+  
+ - EDGE
+   - Static Routing
+   - EIGRP
+   - Multi-OSPF
+
+ - Wireless (C9800)
+   - Controller & AUT
+   - Wifi-Standards 802.1ax
+
+ - VPC (Windows Server 2022)
+   - Domain Controller
+   - 802.1q (Wireless)
+
+ - SDN Meraki
+ 
