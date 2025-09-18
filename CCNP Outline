@@ -60,12 +60,39 @@ Day 1
 
 
 Day 2
- - SDN Meraki
+ - Software Defined Networking - Meraki
  - SDWAN
  - PKI Infrastructure
    - Key Pair
    - SSH Auth
    - Public Key Auth
    - Certificate Auth
+ - Rest API & IoX
+ - EEM & Automation
+ - TCL Scripts
 
+Day 3
+ - IPv4 Subnetting
+ - RSTHayup
+ - Static & Default Routing
+ - EIGRP
+ - Multi Area OSPF
+   - OSPF Authentication
+   - Route Summary
+   - OSPF Route Manipulation
+ - Redistribute EIGRP & OSPF
+ - BGP
+   - BGP Attributes
+ - NAT
+   - Static
+   - Dynamic
+   - PAT
+   - Port Forwarding
+ - IPv6
+   - Tunnel
+   - Transition Tech
+   - EUI-64
+ - IPv6 Subnetting
+   - Dual Stack
+ - Virtual to Real
  
