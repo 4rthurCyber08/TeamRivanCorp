@@ -100,10 +100,8 @@ Day 3
    - Dual Stack
  - Virtual to Real
  
- - Ansible
+ - Python
    - Upload configs via FTP
- - Terraform
-   - Add Loop to EDGE
 
 
 Day 4
