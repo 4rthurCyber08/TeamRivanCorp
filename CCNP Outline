@@ -56,7 +56,7 @@ Day 1
 
  - VPC (Windows Server 2022)
    - Domain Controller
-   - 802.1q (Wireless)
+   - 802.1x (Wireless)
 
 
 Day 2
@@ -95,4 +95,17 @@ Day 3
  - IPv6 Subnetting
    - Dual Stack
  - Virtual to Real
+
+
+Day 4
+ - MPLS Lab
+ - LISP
+ - Windows Server 2022
+   - 802.1x (Wired)
+   - Syslog
+ - CoPP
+ - IP SLA
+ - HSRP
+ - PortSec
+ - Nexus 9000
  
