@@ -99,7 +99,13 @@ Day 3
 
 Day 4
  - MPLS Lab
+   - VRF
+   - MPBGP
  - LISP
+ - WAN
+   - DMVPN
+   - Site to Site
+   - BGP Manipulation
  - Windows Server 2022
    - 802.1x (Wired)
    - Syslog
@@ -108,4 +114,5 @@ Day 4
  - HSRP
  - PortSec
  - Nexus 9000
+ 
  
