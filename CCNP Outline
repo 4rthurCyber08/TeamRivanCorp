@@ -69,11 +69,14 @@ Day 2
    - Certificate Auth
  - Rest API & IoX
  - EEM
- - Docker Networking
  - TCL Scripts
+ - IPv4 Subnetting (Recall)
 
 Day 3
- - IPv4 Subnetting
+ - Day 1 - Python Automation via Telnet
+   - Python Intro
+   - Send commands via Python with JSON
+
  - RSTHayup
  - Static & Default Routing
  - EIGRP
@@ -96,6 +99,11 @@ Day 3
  - IPv6 Subnetting
    - Dual Stack
  - Virtual to Real
+ 
+ - Ansible
+   - Upload configs via FTP
+ - Terraform
+   - Add Loop to EDGE
 
 
 Day 4
