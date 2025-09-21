@@ -1,0 +1,85 @@
+SETUP C9800 FOR WIRELESS ACTIVITY 
+
+
+1. Deploy C9800 VM (c9800-CL-universal9.17.15.03)
+
+Network Adapter: NAT
+Network Adapter 2: Bridged (Replicate)
+Network Adapter 3: VMNet3
+
+--- Configure C9800
+
+!@C9800
+conf t
+ hostname c9800
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ username admin privilege 15 secret C1sc0123
+ line vty 0 48
+  login local
+  transport input all
+  exec-timeout 0 0
+ int vlan 1
+  ip add dhcp
+  no shut
+ int g1
+  no switchport
+  ip add dhcp
+ int g2
+  switchport
+  switchport trunk encaps dot1q
+  switchport mode trunk
+  switchport trunk allowed vlan 1
+ ip route 10.0.0.0 255.0.0.0 10.92.1.4
+ ip route 200.0.0.0 255.255.255.0 10.92.1.4
+  end
+  
+
+--- Access the GUI
+
+Use the IP address obtained from G1 on a browser
+
+https://208.8.8.x
+
+
+--- Follow install process, make sure to specify G2 for management interface, and NTP server as Time.google.com
+
+
+
+
+ 
+  
+ --- Verify Signature
+
+!@C9800
+conf t
+wireless management interface vlan 1       
+end
+wireless config vwlc-ssc key-size 2048 signature-algo sha256 password 0 C1sc0123
+
+
+
+ --- DHCP Relay For Clients
+
+!@C9800
+conf t
+interface vlan 1
+ ip helper-address 10.12.1.4
+end
+
+
+
+******************
+******************
+
+ --- UPDATE AP 1815W to join C9800
+ 
+ 1. Access AP GUI
+ 2. Upload the C9800-AP-universalk9.16.12.08 via TFTP
+ 3. Wait for install
+ 
+ The device should then auto join the C9800
+ Through tftp
+ 
