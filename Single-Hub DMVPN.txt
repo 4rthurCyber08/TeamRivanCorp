@@ -1,0 +1,256 @@
+
+
+!@HQ
+conf t
+ hostname HQ
+ enable secret pass
+ no logging cons
+ int e0/0
+  ip add 200.0.0.10 255.255.255.0
+  no shut
+  exit
+ ip route 0.0.0.0 0.0.0.0 200.0.0.11
+  end
+
+!@I1
+conf t
+ hostname I1
+ enable secret pass
+ no logging cons
+ int lo8
+  ip add 8.8.8.8 255.255.255.255
+ int vlan 1
+  ip add 200.0.0.11 255.255.255.0
+  no shut
+  end
+  
+!@E1
+conf t
+ hostname E1
+ enable secret pass
+ no logging cons
+ int e0/0
+  ip add 200.0.0.1 255.255.255.0
+  no shut
+  exit
+ int e0/1
+  ip add 10.0.1.1 255.255.255.0
+  no shut
+  exit
+ ip route 0.0.0.0 0.0.0.0 200.0.0.11
+  end
+
+!@E2
+conf t
+ hostname E2
+ enable secret pass
+ no logging cons
+ int e0/0
+  ip add 200.0.0.2 255.255.255.0
+  no shut
+  exit
+ int e0/1
+  ip add 10.0.2.2 255.255.255.0
+  no shut
+  exit
+ ip route 0.0.0.0 0.0.0.0 200.0.0.11
+  end
+
+!@E3
+conf t
+ hostname E3
+ enable secret pass
+ no logging cons
+ int e0/0
+  ip add 200.0.0.3 255.255.255.0
+  no shut
+  exit
+ int e0/1
+  ip add 10.0.3.3 255.255.255.0
+  no shut
+  exit
+ ip route 0.0.0.0 0.0.0.0 200.0.0.11
+  end
+
+!@P1
+conf t
+ hostname P1
+ enable secret pass
+ no logging cons
+ int e0/0
+  ip add 10.0.1.101 255.255.255.0
+  no shut
+  exit
+ ip route 0.0.0.0 0.0.0.0 10.0.1.1
+  end
+
+!@P2
+conf t
+ hostname P2
+ enable secret pass
+ no logging cons
+ int e0/0
+  ip add 10.0.2.102 255.255.255.0
+  no shut
+  exit
+ ip route 0.0.0.0 0.0.0.0 10.0.2.2
+  end
+
+!@P3
+conf t
+ hostname P3
+ enable secret pass
+ no logging cons
+ int e0/0
+  ip add 10.0.3.103 255.255.255.0
+  no shut
+  exit
+ ip route 0.0.0.0 0.0.0.0 10.0.3.3
+  end
+
+
+---
+NAT
+
+!@HQ, E1, E2, E3
+conf t
+ int e0/0
+  ip nat outside
+ int e0/1
+  ip nat inside
+ ip access-list extended NAT-POL
+  permit ip any any
+  exit
+ ip nat inside source list NAT-POL int e0/0
+ end
+ 
+ 
+---
+mGRE Hub & Spoke
+
+!@HQ
+conf t
+ int tun1
+  ip add 172.16.1.10 255.255.255.0
+  tunnel source e0/0
+  tunnel mode gre multipoint
+  no shut
+  tun key 123
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast dynamic
+  exit
+  !
+  !- optional
+  no ip next-hop-self eigrp 1
+  no ip split-horizon eigrp 1
+  end
+
+!@E1
+conf t
+ int tun1
+  ip add 172.16.1.1 255.255.255.0
+  tunnel source e0/0
+  tunnel mode gre multipoint
+  no shut
+  tun key 123
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast 200.0.0.10
+  ip nhrp map 172.16.1.10 200.0.0.10
+  ip nhrp nhs 172.16.1.10
+  end
+
+!@E2
+conf t
+ int tun1
+  ip add 172.16.1.2 255.255.255.0
+  tunnel source e0/0
+  tunnel mode gre multipoint
+  no shut
+  tun key 123
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast 200.0.0.10
+  ip nhrp map 172.16.1.10 200.0.0.10
+  ip nhrp nhs 172.16.1.10
+  end
+
+!@E3
+conf t
+ int tun1
+  ip add 172.16.1.3 255.255.255.0
+  tunnel source e0/0
+  tunnel mode gre multipoint
+  no shut
+  tun key 123
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast 200.0.0.10
+  ip nhrp map 172.16.1.10 200.0.0.10
+  ip nhrp nhs 172.16.1.10
+  end
+  
+  
+-- Static
+!@HQ
+conf t
+ ip route 10.0.1.0 255.255.255.0 172.16.1.1
+ ip route 10.0.2.0 255.255.255.0 172.16.1.2
+ ip route 10.0.3.0 255.255.255.0 172.16.1.3
+ end
+
+!@E1
+conf t
+ ip route 10.0.2.0 255.255.255.0 172.16.1.2
+ ip route 10.0.3.0 255.255.255.0 172.16.1.3
+ end
+
+!@E2
+conf t
+ ip route 10.0.1.0 255.255.255.0 172.16.1.1
+ ip route 10.0.3.0 255.255.255.0 172.16.1.3
+ end
+ 
+!@E3
+conf t
+ ip route 10.0.2.0 255.255.255.0 172.16.1.2
+ ip route 10.0.1.0 255.255.255.0 172.16.1.1
+ end
+
+-- OSPF
+
+!@HQ
+conf t
+ router ospf 1
+  router-id 172.16.1.10
+  network 172.16.1.0 0.0.0.255 area 0
+  network 200.0.0.0 0.0.0.255 area 0
+  end
+
+!@E1
+conf t
+ router ospf 1
+  router-id 172.16.1.1
+  network 172.16.1.0 0.0.0.255 area 0
+  network 200.0.0.0 0.0.0.255 area 0
+  network 10.0.1.0 0.0.0.255 area 0
+  end
+  
+!@E2
+conf t
+ router ospf 1
+  router-id 172.16.1.2
+  network 172.16.1.0 0.0.0.255 area 0
+  network 200.0.0.0 0.0.0.255 area 0
+  network 10.0.2.0 0.0.0.255 area 0
+  end
+
+!@E3
+conf t
+ router ospf 1
+  router-id 172.16.1.3
+  network 172.16.1.0 0.0.0.255 area 0
+  network 200.0.0.0 0.0.0.255 area 0
+  network 10.0.3.0 0.0.0.255 area 0
+  end
