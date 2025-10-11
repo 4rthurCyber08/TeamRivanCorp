@@ -297,6 +297,11 @@ conf t
 
 -- OSPF DONT
 
+int tun1
+ ip ospf network point-to-multipoint
+ end
+
+
 !@HQ
 conf t
  router ospf 1
