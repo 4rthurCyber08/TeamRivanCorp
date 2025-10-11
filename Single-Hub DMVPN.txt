@@ -118,15 +118,47 @@ conf t
   ip nat outside
  int e0/1
   ip nat inside
+ no ip access-list extended NAT-POL
  ip access-list extended NAT-POL
   permit ip any any
   exit
  ip nat inside source list NAT-POL int e0/0
  end
  
- 
 ---
-mGRE Hub & Spoke
+NAT0
+
+!@E1
+conf t
+ no ip access-list extended NAT-POL
+ ip access-list extended NAT-POL
+  deny ip any 10.0.2.0 0.0.0.255
+  deny ip any 10.0.3.0 0.0.0.255
+  permit ip any any
+  end
+
+!@E2
+conf t
+ no ip access-list extended NAT-POL
+ ip access-list extended NAT-POL
+  deny ip any 10.0.1.0 0.0.0.255
+  deny ip any 10.0.3.0 0.0.0.255
+  permit ip any any
+  end
+  
+!@E3
+conf t
+ no ip access-list extended NAT-POL
+ ip access-list extended NAT-POL
+  deny ip any 10.0.2.0 0.0.0.255
+  deny ip any 10.0.1.0 0.0.0.255
+  permit ip any any
+  end
+  
+  
+  
+---
+mGRE Hub & Spoke (Dynamic)
 
 !@HQ
 conf t
@@ -190,8 +222,47 @@ conf t
   ip nhrp map 172.16.1.10 200.0.0.10
   ip nhrp nhs 172.16.1.10
   end
+
   
-  
+-- STATIC mGRE
+!@E1
+conf t
+ int tun1
+  ip add 172.16.1.1 255.255.255.0
+  tunnel source e0/0
+  tunnel mode gre multipoint
+  no shut
+  tun key 123
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast dynamic 
+  ip nhrp map 172.16.1.2 200.0.0.2
+  ip nhrp map 172.16.1.3 200.0.0.3
+  !
+  ip route 10.0.2.0 255.255.255.0 172.16.1.2
+  end
+
+!@E2
+conf t
+ int tun1
+  ip add 172.16.1.2 255.255.255.0
+  tunnel source e0/0
+  tunnel mode gre multipoint
+  no shut
+  tun key 123
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast dynamic 
+  ip nhrp map 172.16.1.1 200.0.0.1
+  ip nhrp map 172.16.1.3 200.0.0.3
+  !
+  ip route 10.0.1.0 255.255.255.0 172.16.1.1
+  end
+
+
+
+
+
 -- Static
 !@HQ
 conf t
@@ -218,13 +289,18 @@ conf t
  ip route 10.0.1.0 255.255.255.0 172.16.1.1
  end
 
--- OSPF
+
+
+
+
+
+
+-- OSPF DONT
 
 !@HQ
 conf t
  router ospf 1
   router-id 172.16.1.10
-  network 172.16.1.0 0.0.0.255 area 0
   network 200.0.0.0 0.0.0.255 area 0
   end
 
@@ -232,7 +308,6 @@ conf t
 conf t
  router ospf 1
   router-id 172.16.1.1
-  network 172.16.1.0 0.0.0.255 area 0
   network 200.0.0.0 0.0.0.255 area 0
   network 10.0.1.0 0.0.0.255 area 0
   end
@@ -241,7 +316,6 @@ conf t
 conf t
  router ospf 1
   router-id 172.16.1.2
-  network 172.16.1.0 0.0.0.255 area 0
   network 200.0.0.0 0.0.0.255 area 0
   network 10.0.2.0 0.0.0.255 area 0
   end
@@ -250,7 +324,8 @@ conf t
 conf t
  router ospf 1
   router-id 172.16.1.3
-  network 172.16.1.0 0.0.0.255 area 0
   network 200.0.0.0 0.0.0.255 area 0
   network 10.0.3.0 0.0.0.255 area 0
   end
+  
+  
