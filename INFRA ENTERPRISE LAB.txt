@@ -162,7 +162,12 @@ B4-P2 - 2833
 !@R1 : MPLS-R1
 !@R2 : MPLS-R2
 !@R70 : B4-R1
-
+!@R5 : MPLS-R5
+!@R6 : MPLS-R6
+!@R62 : B3-R2
+!@R61 : B3-R1
+!@SW101 : HQ-C1
+!@SW102 : HQ-C2
 ----
 
 
@@ -942,4 +947,597 @@ Other Names: R70
   exit
  !
  no cdp run
+ end
+
+
+!@R5 : MPLS-R5
+conf t
+ banner motd `
+
+################
+Device Name: MPLS-R5
+Other Names: R5
+################
+
+`
+ !
+ hostname MPLS-R5
+ !
+ vrf definition fabd2
+  rd 10000:5
+  route-target export 10000:1
+  route-target import 10000:1
+  address-family ipv4
+   exit-address-family
+  exit
+ int lo0
+  ip add 100.255.254.5 255.255.255.255
+  ipv6 address fe80::5 link-local
+  exit
+ int e0/0
+  vrf forwarding fabd2
+  ip add 100.5.61.1 255.255.255.252
+  no shut
+  exit
+ int e0/1
+  ip add 100.61.0.1 255.255.255.252
+  no shut
+  exit
+ int range e0/2-3,e1/0-2
+  shut
+  exit
+ int e1/3
+  ip add 100.0.15.2 255.255.255.252
+  ipv6 add fe80::5 link-local
+  no shut
+  exit
+ router ospf 1
+  exit
+ !
+ router bgp 10000
+  bgp router-id 100.255.254.5
+  bgp log-neighbor-changes
+  no bgp default ipv4-unicast
+  neighbor 100.255.254.3 remote-as 10000
+  neighbor 100.255.254.3 update-source Loopback0
+  neighbor 100.255.254.4 remote-as 10000
+  neighbor 100.255.254.4 update-source Loopback0
+  neighbor 100.255.254.6 remote-as 10000
+  neighbor 100.255.254.6 update-source Loopback0
+  !
+  address-family ipv4
+   exit-address-family
+  !
+  address-family vpnv4
+   neighbor 100.255.254.3 activate
+   neighbor 100.255.254.3 send-community extended
+   neighbor 100.255.254.4 activate
+   neighbor 100.255.254.4 send-community extended
+   neighbor 100.255.254.6 activate
+   neighbor 100.255.254.6 send-community extended
+  exit-address-family
+  !
+  address-family ipv4 vrf fabd2
+   redistribute connected
+   neighbor 100.5.61.2 remote-as 65006
+   neighbor 100.5.61.2 activate
+   exit-address-family
+   end
+
+
+!@R6 : MPLS-R6
+conf t
+ banner motd `
+
+################
+Device Name: MPLS-R6
+Other Names: R6
+################
+
+`
+ !
+ hostname MPLS-R6
+ !
+ vrf definition fabd2
+  rd 10000:6
+  route-target export 10000:1
+  route-target import 10000:1
+  exit
+ address-family ipv4
+  exit-address-family
+  exit
+ interface Loopback0
+  ip address 100.255.254.6 255.255.255.255
+  ip ospf 1 area 0
+  ipv6 address FE80::6 link-local
+  exit
+ interface Ethernet0/0
+  vrf forwarding fabd2
+  ip address 100.6.62.1 255.255.255.252
+  exit
+ interface Ethernet0/1
+  no ip address
+  exit
+ interface Ethernet0/1.100
+  encapsulation dot1Q 100
+  vrf forwarding fabd2
+  ip address 100.6.70.1 255.255.255.252
+  exit
+ interface Ethernet0/1.414
+  encapsulation dot1Q 414
+  ip address 100.6.70.5 255.255.255.252
+  ipv6 address 2001:DB8:6:70::1/64
+  exit
+ int range e0/2-3,e1/0-2
+  shut
+  exit
+ interface Ethernet1/3
+  ip address 100.0.26.2 255.255.255.252
+  ip ospf 1 area 0
+  ipv6 address FE80::6 link-local
+ !
+ router ospfv3 414
+ !
+ router ospf 1
+ !
+ router bgp 10000
+  bgp router-id 100.255.254.6
+  bgp log-neighbor-changes
+  no bgp default ipv4-unicast
+  neighbor 100.255.254.3 remote-as 10000
+  neighbor 100.255.254.3 update-source Loopback0
+  neighbor 100.255.254.4 remote-as 10000
+  neighbor 100.255.254.4 update-source Loopback0
+  neighbor 100.255.254.5 remote-as 10000
+  neighbor 100.255.254.5 update-source Loopback0
+  !
+  address-family ipv4
+   exit-address-family
+  !
+  address-family vpnv4
+   neighbor 100.255.254.3 activate
+   neighbor 100.255.254.3 send-community extended
+   neighbor 100.255.254.4 activate
+   neighbor 100.255.254.4 send-community extended
+   neighbor 100.255.254.5 activate
+   neighbor 100.255.254.5 send-community extended
+   exit-address-family
+  !
+  address-family ipv4 vrf fabd2
+   redistribute connected
+   neighbor 100.6.62.2 remote-as 65006
+   neighbor 100.6.62.2 activate
+   neighbor 100.6.70.2 remote-as 65007
+   neighbor 100.6.70.2 activate
+   exit-address-family
+   end
+
+
+!@R62 : B3-R2
+conf t
+ banner motd `
+
+################
+Device Name: B3-R2
+Other Names: R62
+################
+
+`
+ !
+ hostname B3-R2
+ vrf definition WAN
+ rd 65006:62
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ crypto isakmp policy 10
+  encr 3des
+  hash md5
+  authentication pre-share
+  group 2
+ crypto isakmp key cisco address 0.0.0.0    
+ !
+ crypto ipsec transform-set trans esp-3des esp-md5-hmac 
+ !
+ crypto ipsec profile prof
+  set security-association lifetime seconds 900
+  set transform-set trans 
+ !
+ interface Loopback0
+  ip address 10.6.255.62 255.255.255.255
+ !
+ interface Tunnel0
+  ip address 10.200.0.62 255.255.255.0
+  no ip redirects
+  ip nhrp map multicast 10.2.255.24
+  ip nhrp map 10.200.0.1 10.2.255.24
+  ip nhrp network-id 1010
+  ip nhrp nhs 10.200.0.1
+  ip nhrp redirect
+  shutdown
+  tunnel source Loopback0
+  tunnel mode gre multipoint
+  tunnel protection ipsec profile prof
+ !
+ interface Ethernet0/0
+  ip address 100.6.62.2 255.255.255.252
+ !
+ interface Ethernet0/1
+  ip address 10.6.99.2 255.255.255.252
+ !
+ interface Ethernet0/2
+  ip address 10.6.13.1 255.255.255.252
+ !
+ interface Ethernet0/3
+  ip address 10.6.11.1 255.255.255.252
+ !
+ router eigrp ccie
+ !
+ address-family ipv4 unicast autonomous-system 65006
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/1
+   authentication mode md5
+   authentication key-chain CCIE_MD5
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/2
+   authentication mode md5
+   authentication key-chain CCIE_MD5
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Ethernet0/3
+   authentication mode md5
+   authentication key-chain CCIE_MD5
+   no passive-interface
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+  network 10.0.0.0
+ exit-address-family
+!
+router bgp 65006
+ bgp log-neighbor-changes
+ network 10.6.255.62 mask 255.255.255.255
+ neighbor 100.6.62.1 remote-as 10000
+ !
+ address-family ipv4 vrf WAN
+ exit
+ !
+ no cdp run
+ end
+
+
+!@R61 : B3-R1
+conf t
+ banner motd `
+
+################
+Device Name: B3-R1
+Other Names: R61
+################
+
+`
+ !
+ hostname B3-R1
+ !
+ vrf definition WAN
+ rd 65006:61
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ crypto isakmp policy 10
+  encr 3des
+  hash md5
+  authentication pre-share
+  group 2
+  !
+ crypto isakmp key cisco address 0.0.0.0        
+ !
+ !
+ crypto ipsec transform-set trans esp-3des esp-md5-hmac 
+ !         
+ !
+ crypto ipsec profile prof
+  set security-association lifetime seconds 900
+  set transform-set trans 
+  exit
+ interface Loopback0
+ ip address 10.6.255.61 255.255.255.255
+!
+ interface Tunnel0
+  ip address 10.200.0.61 255.255.255.0
+  no ip redirects
+  ip nhrp map multicast 10.2.255.24
+  ip nhrp map 10.2.255.24 10.200.0.1
+  ip nhrp network-id 1010
+  ip nhrp nhs 10.200.0.1
+  ip nhrp redirect
+  tunnel source Loopback0
+  tunnel mode gre multipoint
+  tunnel protection ipsec profile prof
+ !
+ interface Ethernet0/0
+  ip address 100.5.61.2 255.255.255.252
+ !
+ interface Ethernet0/1
+  ip address 10.6.99.1 255.255.255.252
+ !
+ interface Ethernet0/2
+  ip address 10.6.12.1 255.255.255.252
+ !
+ interface Ethernet0/3
+  ip address 10.6.10.1 255.255.255.252
+ !
+ interface Ethernet1/0
+  vrf forwarding WAN
+  ip address 200.99.61.2 255.255.255.252
+ !
+ interface Ethernet1/1
+  no ip address
+  shutdown
+ !
+ interface Ethernet1/2
+  no ip address
+  shutdown
+ !
+ interface Ethernet1/3
+  no ip address
+  shutdown
+  !
+ router eigrp ccie
+ !
+ address-family ipv4 unicast autonomous-system 65006
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  topology base
+  exit-af-topology
+ exit-address-family
+!
+router bgp 65006
+ bgp log-neighbor-changes
+ network 10.6.255.61 mask 255.255.255.255
+ neighbor 100.5.61.1 remote-as 10000
+ !
+ address-family ipv4 vrf WAN
+  neighbor 200.99.61.1 remote-as 19999
+  neighbor 200.99.61.1 activate
+ exit-address-family
+ !
+ no cdp run
+ end
+
+
+!@SW110 : HQ-D1
+conf t
+ banner motd `
+
+################
+Device Name: HQ-D1
+Other Names: SW110
+################
+
+`
+ !
+ hostname HQ-D1
+ !
+ vtp mode transparent
+ vlan 2000-2001
+  exit
+ interface Port-channel1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Port-channel2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Ethernet0/0
+!
+interface Ethernet0/1
+!
+interface Ethernet0/2
+!
+interface Ethernet0/3
+!
+interface Ethernet1/0
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 1 mode on
+!
+interface Ethernet1/1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 1 mode on
+!
+interface Ethernet1/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 2 mode passive
+!
+interface Ethernet1/3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 2 mode passive
+!
+end
+
+
+!@SW101 : HQ-C1
+conf t
+ banner motd `
+
+################
+Device Name: HQ-C1
+Other Names: SW101
+################
+
+`
+ !
+ hostname HQ-C1
+ ipv6 unicast-routing
+ !
+ vtp mode transparent
+ vlan 2000-2001
+  exit
+ interface Loopback0
+ ip address 10.1.255.101 255.255.255.255
+ ip ospf 1 area 0
+!
+interface Port-channel1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Port-channel3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Ethernet0/0
+ no switchport
+ ip address 10.1.10.2 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 address FE80::101 link-local
+!
+interface Ethernet0/1
+ no switchport
+ ip address 10.1.12.2 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 address FE80::101 link-local
+!
+interface Ethernet0/2
+ no switchport
+ ip address 10.2.241.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/3
+!
+interface Ethernet1/0
+!
+interface Ethernet1/1
+!
+interface Ethernet1/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Ethernet1/3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Ethernet2/0
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 3 mode active
+!
+interface Ethernet2/1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 3 mode active
+ exit
+ !
+ interface Vlan2000
+ ip address 10.1.100.2 255.255.255.0
+ ipv6 address FE80::101 link-local
+!
+interface Vlan2001
+ ip address 10.1.101.2 255.255.255.0
+ ipv6 address FE80::101 link-local
+!
+router ospf 1
+!
+ end
+
+
+!@SW102 : HQ-C2
+conf t
+ banner motd `
+
+################
+Device Name: HQ-C2
+Other Names: SW102
+################
+
+`
+ !
+ hostname HQ-C2
+ ipv6 unicast-routing
+ vtp mode server
+ vlan 2000-2001 
+  exit
+ 
+interface Loopback0
+ ip address 10.1.255.102 255.255.255.255
+ ip ospf 1 area 0
+!
+interface Port-channel2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Port-channel3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Ethernet0/0
+ no switchport
+ ip address 10.1.11.2 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 address FE80::102 link-local
+!
+interface Ethernet0/1
+ no switchport
+ ip address 10.1.13.2 255.255.255.252
+ ip ospf 1 area 0
+ ipv6 address FE80::102 link-local
+!
+interface Ethernet0/2
+ no switchport
+ ip address 10.2.242.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/3
+!
+interface Ethernet1/0
+!
+interface Ethernet1/1
+!
+interface Ethernet1/2
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 2 mode passive
+!
+interface Ethernet1/3
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 2 mode passive
+!
+interface Ethernet2/0
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 3 mode active
+!
+interface Ethernet2/1
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ channel-group 3 mode active
+ exit
+ !
+ interface Vlan2000
+ ip address 10.1.100.3 255.255.255.0
+ ipv6 address FE80::102 link-local
+!
+interface Vlan2001
+ ip address 10.1.101.3 255.255.255.0
+ ipv6 address FE80::102 link-local
+!
+router ospf 1
  end
