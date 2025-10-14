@@ -1,0 +1,62 @@
+
+
+Day 2
+
+Cloud vs On Premise
+
+SDN - Cisco Meraki
+SDWAN - Cisco SD-WAN
+
+- vEDGE OnBoarding
+- Configuration Templates
+- OMP
+
+NETCONF
+REST API
+
+API Authentication Methods
+- OUTH 2.0
+- Basic
+
+POSTMAN
+IOX Guestshell
+EEM
+
+
+Day 3
+
+Routing
+BGP Attributes
+IPv6
+
+
+
+
+Day 4
+
+Ansible, Terraform, Salt-Stack
+MPLS
+
+---
+
+Active Directory
+AAA Authentication
+
+Site2Site VPN
+PKI Server
+Trust Point
+
+PAM Solution Jumpserver
+Password Auth
+SSH Public Key Auth
+GSSAPI Auth
+
+
+
+
+Day 5
+CoPP
+NetFlowv9
+IP SLA
+DMVPN WAN Lab
+SYSLOG
