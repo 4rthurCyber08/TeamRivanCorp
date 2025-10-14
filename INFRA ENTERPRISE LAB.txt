@@ -1,0 +1,945 @@
+###################
+NetMapping:
+
+HQ-P1 - 2801
+HQ-P2 - 2802
+HQ-D1 - 2803
+HQ-C1 - 2804
+HQ-C2 - 2805
+HQ-R1 - 2806
+HQ-R2 - 2807
+
+DC-R1 - 2808
+DC-R2 - 2809
+DC-R3 - 2810
+DC-R4 - 2811
+DC-C1 - 2812
+DC-C2 - 2813
+DC-C3 - 2814
+DC-C4 - 2815
+DC-E1 - 2816
+DC-E2 - 2817
+INET-SP - 2834
+
+MPLS-R1 - 2818
+MPLS-R2 - 2819
+MPLS-R3 - 2820
+MPLS-R4 - 2821
+MPLS-R5 - 2822
+MPLS-R6 - 2823
+
+SP2 - 2824
+
+B3-R1 - 2825
+B3-R2 - 2826
+B3-D1 - 2827
+B3-D2 - 2828
+B3-A1 - 2829
+
+B4-R1 - 2830
+B4-A1 - 2831
+B4-P1 - 2832
+B4-P2 - 2833
+
+
+
+
+
+
+803:0/0 801:0/0
+803:0/1 802:0/0
+803:1/0 804:1/2
+803:1/1 804:1/3
+803:1/2 805:1/2
+803:1/3 805:1/3
+
+804:2/0 805:2/0
+804:2/1 805:2/1
+
+804:0/0 806:0/3
+804:0/1 807:0/2
+804:0/2 814:1/2
+
+805:0/0 807:0/3
+805:0/1 806:0/2
+805:0/2 815:1/2
+
+806:0/1 807:0/1
+
+807:0/3 834:0/0
+
+
+808:0/0 834:0/1
+808:0/1 812:0/3
+808:0/2 813:0/3
+808:0/3 816:0/2
+
+809:0/0 834:0/2
+809:0/1 812:1/0
+809:0/2 813:1/0
+809:0/3 817:0/2
+
+816:0/0 814:1/3
+816:0/1 815:0/2
+
+817:0/0 814:0/2
+817:0/1 815:1/3
+
+812:0/0 814:1/1
+812:0/2 813:0/2
+812:0/1 815:1/0
+
+813:0/0 815:1/1
+813:0/1 814:1/0
+
+814:0/0 810:0/3
+814:0/1 811:0/2
+814:0/3 815:0/3
+
+815:0/0 811:0/3
+815:0/1 810:0/2
+
+810:0/1 811:0/1
+
+811:0/0 824:0/0
+
+
+818:0/0 819:0/0
+818:0/1 820:1/3
+818:0/2 822:1/3
+
+819:0/1 821:1/3
+819:0/2 823:1/3
+
+820:0/1 810:0/0
+820:0/0 806:0/0
+
+
+825:0/0 822:0/0 
+825:0/1 826:0/1
+825:0/2 828:0/1
+825:0/3 827:0/2
+825:1/0 834:0/3
+
+826:0/0 823:0/0
+826:0/2 827:0/1
+826:0/3 828:0/2
+
+827:0/0 828:0/0
+827:2/0 829:2/0
+
+828:2/0 829:2/1
+
+
+830:0/0 823:0/1
+830:0/1 834:1/1
+830:0/2 831:2/1
+
+831:0/0 832:0/0
+831:0/1 833:0/0
+
+
+
+
+
+
+
+
+
+
+
+
+!@cEdge21 : DC-E1
+!@R11 : HQ-R1
+!@R12 : HQ-R2
+!@Internet_SP : INET-SP
+!@R23 : DC-R1
+!@R24 : DC-R2
+!@R22 : DC-R4
+!@R21 : DC-R3
+!@R4 : MPLS-R4
+!@R3 : MPLS-R3
+!@R1 : MPLS-R1
+!@R2 : MPLS-R2
+!@R70 : B4-R1
+
+----
+
+
+CCIE - ENTERPRISE INFRASTRUCTURE LABORATORY
+
+!@All Devices
+conf t
+ no ip domain lookup
+ no ip http server
+ no ip http secure-server
+ ipv6 unicast-routing
+ line cons 0
+  exec-timeout 0 0
+  privilege level 15
+  logging synchronous
+ line vty 0 4
+  password pass
+  login
+  transport input none
+  exit
+ logging discriminator EXCESS severity drops 6 msg-body drops EXCESSCOLL
+ logging console discriminator EXCESS
+ end
+
+
+!@cEdge21 : DC-E1
+conf t
+ banner motd `
+
+################
+Device Name: DC-E1 
+Other Names: cEdge21
+################
+
+`
+ !
+ hostname DC-E1
+ vrf definition 999
+  rd 1:999
+  address-family ipv4
+   route-target export 1:999
+   route-target import 1:999
+   exit-address-family
+  address-family ipv6
+   exit-address-family
+  exit
+  !
+ !
+ int e0/0
+  ip add 10.2.201.1 255.255.255.248
+  ip ospf 1 area 0
+  no shut
+  exit
+ int e0/0.3999
+  encaps dot1q 3999
+  vrf forwarding 999
+  ip ospf 999 area 0
+  exit
+ int e0/1
+  ip add 10.2.202.1 255.255.255.248
+  ip ospf 1 area 0
+  exit
+ int e0/1.3999
+  encaps dot1q 3999
+  vrf forwarding 999
+  no ip redirects
+  ip ospf 999 area 0
+  exit
+ router ospf 999 vrf 999
+  router-id 1.99.2.1
+  timers throttle spf 200 1000 10000
+  exit
+ router ospf 1
+  timers throttle spf 200 1000 10000
+  exit
+ ip route 0.0.0.0 0.0.0.0 10.2.201.3
+ end
+ 
+
+!@R11 : HQ-R1
+conf t
+ banner motd `
+
+################
+Device Name: HQ-R1 
+Other Names: R11
+################
+
+`
+ !
+ hostname HQ-R1
+ int lo0
+  ip add 10.1.255.11 255.255.255.255
+  ipv6 add 2001:db8:1:255::11/128
+  ipv6 enable
+  no shut
+  exit
+ int e0/0
+  ip add 100.3.11.2 255.255.255.252
+  ipv6 add fe80::11 link-local
+  no shut
+  exit
+ int e0/1
+  ip add 10.1.99.1 255.255.255.252
+  ipv6 add fe80::11 link-local
+  no shut
+  exit
+ int e0/2
+  ip add 10.1.13.1 255.255.255.252
+  ipv6 add fe80::11 link-local
+  no shut
+  exit
+ int e0/3
+  ip add 10.1.10.1 255.255.255.252
+  ipv6 add fe80::11 link-local
+  no shut
+  exit
+ !
+ router bgp 65001
+  bgp log-neighbor-changes
+  no bgp default ipv4-unicast
+  neighbor 100.3.11.1 remote-as 10000
+  address-family ipv4
+   neighbor 100.3.11.1 activate
+   exit-address-family
+  end
+  
+
+!@R12 : HQ-R2
+conf t
+ banner motd `
+
+################
+Device Name: HQ-R2 
+Other Names: R12
+################
+
+`
+ !
+ hostname HQ-R2
+ int lo0
+  ip add 10.1.255.12 255.255.255.255
+  ipv6 add 2001:db8:1:255::12/128
+  no shut
+  exit
+ int e0/0
+  ip add 200.99.12.2 255.255.255.252
+  no shut
+  exit
+ int e0/1
+  ip add 10.1.99.2 255.255.255.252
+  ipv6 add fe80::12 link-local
+  no shut
+  exit
+ int e0/2
+  ip add 10.1.12.1 255.255.255.252
+  ipv6 add fe80::12 link-local
+  no shut
+  exit
+ int e0/3
+  ip add 10.1.11.1 255.255.255.252
+  ipv6 add fe80::12 link-local
+  no shut
+  exit
+ !
+ router bgp 65001
+  bgp log-neighbor-changes
+  no bgp default ipv4-unicast
+  exit
+ !
+ no cdp run
+ end
+
+
+!@Internet_SP : INET-SP
+conf t
+ banner motd `
+
+################
+Device Name: INET-SP 
+Other Names: Internet_SP
+################
+
+`
+ !
+ hostname INET-SP
+ no ipv6 unicast-routing
+ int lo0
+  ip add 8.8.8.8 255.255.255.255
+  exit
+ int e0/0
+  ip add 200.99.12.1 255.255.255.252
+  no shut
+  exit
+ int e0/1
+  ip add 200.99.23.1 255.255.255.252
+  no shut
+  exit
+ int e0/2
+  ip add 200.99.24.1 255.255.255.252
+  no shut
+  exit
+ int e0/3
+  ip add 200.99.61.1 255.255.255.252
+  no shut
+  exit
+ int e1/1
+  ip add 200.99.70.1 255.255.255.252
+  no shut
+  exit
+ !
+ router bgp 19999
+  bgp router-id 8.8.8.8
+  bgp log-neighbor-changes
+   neighbor 200.99.12.2 remote-as 65001
+   neighbor 200.99.12.2 default-originate
+   neighbor 200.99.23.2 remote-as 65002
+   neighbor 200.99.23.2 default-originate
+   neighbor 200.99.24.2 remote-as 65002
+   neighbor 200.99.24.2 default-originate
+   neighbor 200.99.61.2 remote-as 65006
+   neighbor 200.99.61.2 default-originate
+   neighbor 200.99.70.2 remote-as 65007
+   neighbor 200.99.70.2 default-originate
+   end
+   
+
+!@R23 : DC-R1
+conf t
+ banner motd `
+
+################
+Device Name: DC-R1 
+Other Names: R23
+################
+
+`
+ !
+ hostname DC-R1
+ int lo0
+  ip add 10.2.255.23 255.255.255.255
+  exit
+ int e0/0
+  ip add 200.99.23.2 255.255.255.252
+  no shut
+  exit
+ int e0/1
+  ip add 10.2.115.1 255.255.255.252
+  no shut
+  exit
+ int e0/2
+  ip add 10.2.215.1 255.255.255.252
+  no shut
+  exit
+ int e0/3
+  shut
+  exit
+ !
+ no cdp run
+ end
+
+
+!@R24 : DC-R2
+conf t
+ banner motd `
+
+################
+Device Name: DC-R2 
+Other Names: R24
+################
+
+`
+ !
+ hostname DC-R2
+ !
+ crypto isakmp policy 10
+  encr 3des
+  authentication pre-share
+  group 2
+ crypto isakmp key cisco address 0.0.0.0
+ !
+ crypto ipsec transform-set trans esp-3des esp-md5-hmac
+ !
+ crypto ipsec profile prof
+  set security-association lifetime seconds 900
+  set transform-set trans
+  exit
+ !
+ int lo0
+  ip add 10.2.255.24 255.255.255.255
+  exit
+ int lo14
+  ip add 14.14.14.14 255.255.255.255
+  exit
+ int lo114
+  ip add 14.14.14.114 255.255.255.255
+  exit
+ int tun0
+  ip address 10.200.0.1 255.255.255.0
+  no ip redirects
+  ip nhrp network-id 1010
+  tunnel source Ethernet0/3
+  tunnel mode gre multipoint
+  exit
+ int e0/0
+  ip add 200.99.24.2 255.255.255.252
+  no shut
+  exit
+ int e0/1
+  ip add 10.2.114.1 255.255.255.252
+  no shut
+  exit
+ int e0/2
+  ip add 10.2.214.1 255.255.255.252
+  no shut
+  exit
+ int e0/3
+  shut
+  exit
+ !
+ router eigrp ccie
+  address-family ipv4 unicast autonomous-system 65006
+   af-int default
+    passive-interface
+    exit-af-interface
+   af-interface tunnel0
+    no passive-interface
+    exit-af-interface
+   topology base
+    exit-af-topology
+   network 10.2.0.0 0.0.255.255
+   network 10.200.0.0 0.0.0.255
+   exit-address-family
+  exit
+ !
+ router bgp 65002
+  bgp log-neighbor-changes
+  neighbor 200.99.24.1 remote-as 19999
+  exit
+ !
+ no cdp run
+ end
+ 
+
+!@R22 : DC-R4
+conf t
+ banner motd `
+
+################
+Device Name: DC-R4 
+Other Names: R22
+################
+
+`
+ !
+ hostname DC-R4
+ int lo0
+  ip add 10.2.255.22 255.255.255.255
+  no shut
+  exit
+ int e0/0
+  ip add 101.22.0.2 255.255.255.252
+  no shut
+  exit
+ int e0/1
+  ip add 10.2.99.2 255.255.255.252
+  no shut
+  exit
+ int e0/2
+  ip add 10.2.12.1 255.255.255.252
+  no shut
+  exit
+ int e0/3
+  ip add 10.2.11.1 255.255.255.252
+  no shut
+  exit
+ !
+ router ospf 1
+  exit
+ !
+ router bgp 65002
+  bgp router-id 10.2.255.22
+  bgp log-neighbor-changes
+  network 10.2.255.22 mask 255.255.255.255
+  neighbor 10.2.255.21 remote-as 65002
+  neighbor 10.2.255.21 update-source loopback0
+  neighbor 10.2.255.21 next-hop-self
+  exit
+ !
+ no cdp run
+ end
+
+
+!@R21 : DC-R3
+conf t
+ banner motd `
+
+################
+Device Name: DC-R3 
+Other Names: R21
+################
+
+`
+ !
+ hostname DC-R3
+ int lo0
+  ip add 10.2.255.21 255.255.255.255
+  ip ospf 1  area 0
+  exit
+ int e0/0
+  ip add 100.3.21.2 255.255.255.252
+  no shut
+  ip ospf 1 area 0
+  exit
+ int e0/1
+  ip add 10.2.99.1 255.255.255.252
+  ip ospf 1 area 0
+  no shut
+  exit
+ int e0/2
+  ip add 10.2.13.1 255.255.255.252
+  no shut
+  ip ospf 1 area 0
+  exit
+ int e0/3
+  ip add 10.2.10.1 255.255.255.252
+  no shut
+  ip ospf 1 area 0
+  exit
+ !
+ router ospf 1
+  redistribute bgp 65002 subnets
+  exit
+ !
+ router bgp 65002
+  bgp router-id 10.2.255.21
+  bgp log-neighbor-changes
+  network 10.2.255.21 mask 255.255.255.255
+  neighbor 10.2.255.22 remote-as 65002
+  neighbor 10.2.255.22 update-source loopback0
+  neighbor 100.3.21.1 remote-as 10000
+  exit
+ !
+ no cdp run
+ end
+
+
+!@R4 : MPLS-R4
+conf t
+ banner motd `
+
+################
+Device Name: MPLS-R4 
+Other Names: R4
+################
+
+`
+ !
+ hostname MPLS-R4
+ !
+ vrf definition fabd2
+  rd 10000:4
+  route-target export 10000:4
+  route-target import 10000:4
+  address-family ipv4
+   exit-address-family
+  exit
+ !
+ ipv6 unicast-routing
+ !
+ int lo0
+  ip add 100.255.254.4 255.255.255.254
+  ip ospf 1 area 0
+  ipv6 add fe80::4 link-local
+  exit
+ int e0/0
+  no shut
+  exit
+ int e0/0.100
+  encaps dot1q 100
+  ip add 100.4.30.1 255.255.255.252
+  no shut
+ int e0/0.414
+  encaps dot1q 414
+  ip add 100.4.30.5 255.255.255.252
+  ipv6 add 2001:db8:4:30::1/64
+  no shut
+  exit
+ int range e0/1-3,e1/0-2
+  shut
+  exit
+ int e1/3
+  ip add 100.0.24.2 255.255.255.252
+  ip ospf 1 area 0
+  ipv6 add fe80::4 link-local
+  no shut
+  exit
+ !
+ router ospf 1
+  exit
+ !
+ router bgp 10000
+  bgp router-id 100.255.254.4
+  bgp log-neighbor-changes
+  no bgp default ipv4-unicast
+  neighbor 100.255.254.3 remote-as 10000
+  neighbor 100.255.254.3 update-source loopback0
+  neighbor 100.255.254.5 remote-as 10000
+  neighbor 100.255.254.5 update-source loopback0
+  neighbor 100.255.254.6 remote-as 10000
+  neighbor 100.255.254.6 update-source loopback0
+  address-family ipv4
+   exit-address-family
+  address-family vpnv4
+   neighbor 100.255.254.3 activate
+   neighbor 100.255.254.3 send-community extended
+   neighbor 100.255.254.5 activate
+   neighbor 100.255.254.5 send-community extended
+   neighbor 100.255.254.6 activate
+   neighbor 100.255.254.6 send-community extended
+   exit-address-family
+  end
+
+
+!@R3 : MPLS-R3
+conf t
+ banner motd `
+
+################
+Device Name: MPLS-R3 
+Other Names: R3
+################
+
+`
+ !
+ hostname MPLS-R3
+ ipv6 unicast-routing
+ !
+ int lo0
+  ip add 100.255.254.3 255.255.255.255
+  ipv6 add fe80::3 link-local
+  no shut
+  exit
+ int e0/0
+  ip add 100.3.11.1 255.255.255.252
+  no shut
+  exit
+ int e0/1
+  ip add 100.3.21.1 255.255.255.252
+  no shut
+  exit
+ int range e0/2-3,e1/0-2
+  shut
+  exit
+ int e1/3
+  ip add 100.0.13.2 255.255.255.252
+  no shut
+  ip ospf 1 area 0
+  exit
+ !
+ router ospf 1
+  end
+
+
+!@R1 : MPLS-R1
+conf t
+ banner motd `
+
+################
+Device Name: MPLS-R1 
+Other Names: R1
+################
+
+`
+ !
+ hostname MPLS-R1
+ ipv6 unicast-routing
+ !
+ int lo0
+  ip add 100.255.254.1 255.255.255.255
+  ip ospf 1 area 0
+  ipv6 add fe80::1 link-local
+  exit
+ int e0/0
+  ip add 100.0.12.1 255.255.255.252
+  ip ospf 1 area 0
+  ipv6 add fe80::1 link-local
+  no shut
+  exit
+ int e0/1
+  ip add 100.0.13.1 255.255.255.252
+  ip ospf 1 area 0
+  ipv6 add fe80::1 link-local
+  no shut
+  exit
+ int e0/2
+  ip add 100.0.15.1 255.255.255.252
+  no shut
+  ip ospf 1 area 0
+  ipv6 add fe80::1 link-local
+  exit
+ int e0/3
+  shut
+  exit
+ !
+ router ospf 1
+  end
+
+
+!@R2 : MPLS-R2
+conf t
+ banner motd `
+
+################
+Device Name: MPLS-R2 
+Other Names: R2
+################
+
+`
+ !
+ hostname MPLS-R2
+ ipv6 unicast-routing
+ !
+ int lo0
+  ip add 100.255.254.2 255.255.255.255
+  ip ospf 1 area 0
+  ipv6 add fe80::2 link-local
+  no shut
+  exit
+ int e0/0
+  ip add 100.0.12.2 255.255.255.252
+  ip ospf 1 area 0
+  ipv6 add fe80::2 link-local
+  no shut
+  exit
+ int e0/1
+  ip add 100.0.24.1 255.255.255.252
+  ip ospf 1 area 0
+  ipv6 add fe80::2 link-local
+  no shut
+  exit
+ int e0/2
+  ip add 100.0.26.1 255.255.255.252
+  ip ospf 1 area 0
+  ipv6 add fe80::2 link-local
+  no shut
+  exit
+ int e0/3
+  shut
+  exit
+ !
+ router ospf 1
+  end
+  
+  
+!@R70 : B4-R1
+conf t
+ banner motd `
+
+################
+Device Name: B4-R1
+Other Names: R70
+################
+
+`
+ !
+ hostname B4-R1
+ vrf definition WAN
+  rd 65006:70
+  address-family ipv4
+   exit-address-family
+  exit
+ vrf definition kiosk
+  rd 65535:1
+  address-family ipv4
+   exit-address-family
+  exit
+ !
+ ipv6 unicast-routing
+ !
+ crypto keyring KR vrf WAN
+  pre-shared-key address 0.0.0.0 0.0.0.0 key cisco
+  exit
+ !
+ crypto isakmp policy 10
+  encr 3des
+  hash md5
+  authentication pre-share
+  group 2
+  exit
+ !
+ crypto ipsec transform-set trans esp-3des esp-md5-hmac
+ !
+ crypto ipsec profile prof
+  set security-association lifetime seconds 900
+  set transform-set trans
+  exit
+ !
+ int lo0
+  vrf forwarding WAN
+  ip add 10.7.255.70 255.255.255.255
+  exit
+ int lo14
+  ip add 10.6.14.14 255.255.255.255
+  ip igmp join-group 239.1.1.24
+  exit
+ int tun0
+  ip add 10.200.0.70 255.255.255.0
+  no ip redirects
+  ip nhrp map multicast 10.2.255.24
+  ip nhrp map 10.200.0.1 10.2.255.24
+  ip nhrp network-id 1010
+  ip nhrp nhs 10.200.0.1
+  tun source loopback0
+  tun mode gre multipoint
+  tun protection ipsec profile prof
+  exit
+ int e0/0.100
+  encaps dot1q 100
+  vrf forwarding WAN
+  ip add 100.6.70.2 255.255.255.252
+  no cdp enable
+  no shut
+  exit
+ int e0/0
+  no shut
+  exit
+ int e0/0.414
+  encaps dot1q 414
+  ip add 100.6.70.6 255.255.255.252
+  no cdp enable
+  no shut
+  exit
+ int e0/1
+  ip add 200.99.70.2 255.255.255.252
+  no shut
+ int e0/2
+  no shut
+  exit
+ int e0/2.100
+  encaps dot1q 100
+  vrf forwarding WAN
+  ip add 192.168.0.1 255.255.255.0
+  no cdp enable 
+  no shut
+  exit
+ int e0/2.414
+  encaps dot1q 414
+  vrf forwarding kiosk
+  ip add 172.31.70.1 255.255.255.0
+  no cdp enable 
+  no shut
+  exit
+ int e0/3
+  shut
+  exit
+ !
+ router eigrp ccie
+  address-family ipv4 unicast autonomous-system 65005
+   af-interface default
+    passive-interface
+	exit-af-int
+   topology base
+    exit-af-top   
+   network 10.6.14.14 0.0.0.0
+   network 10.200.0.0 0.0.0.255
+   network 10.200.0.0 0.0.0.255
+   exit-address-family
+  exit
+ router bgp 65007
+  bgp log-neighbor-changes
+  address-family ipv4 vrf WAN
+   network 10.7.255.70 mask 255.255.255.255
+   neighbor 100.6.70.1 remote-as 10000
+   neighbor 100.6.70.1 activate
+   exit
+  exit
+ !
+ no cdp run
+ end
