@@ -168,6 +168,20 @@ B4-P2 - 2833
 !@R61 : B3-R1
 !@SW101 : HQ-C1
 !@SW102 : HQ-C2
+!@SW211 : DC-C1
+!@SW212 : DC-C2
+!@SW202 : DC-C4
+!@SW602 : B3-D2
+!@SW601 : B3-D1
+!@SW610 : B3-A1
+!@SW700 : B4-A1
+!@SP_2 : SP2
+!@cEdge22 : DC-E2
+!@host11 : HQ-P1
+!@host12 : HQ-P2
+!@host71 : B4-P1
+!@host72 : B4-P2
+
 ----
 
 
@@ -1541,3 +1555,620 @@ interface Vlan2001
 !
 router ospf 1
  end
+ 
+
+!@SW212 : DC-C2
+conf t
+ banner motd `
+
+################
+Device Name: DC-C2
+Other Names: SW212
+################
+
+`
+ !
+ hostname DC-C2
+ !
+ no cdp run
+ !
+ interface Loopback0
+ ip address 10.2.255.212 255.255.255.255
+ ip ospf 1 area 0
+!
+interface Ethernet0/0
+ no switchport
+ ip address 10.2.21.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/1
+ no switchport
+ ip address 10.2.23.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/2
+ no switchport
+ ip address 10.2.119.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/3
+ no switchport
+ ip address 10.2.215.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/0
+ no switchport
+ ip address 10.2.214.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/1
+ no switchport
+ ip address 10.2.254.1 255.255.255.0
+ ip ospf 1 area 0
+!
+interface Ethernet1/2
+ no switchport
+ ip address 10.2.253.1 255.255.255.0
+ ip ospf 1 area 0
+ exit
+ !
+ router ospf 1
+  end
+
+
+!@SW211 : DC-C1
+conf t
+ banner motd `
+
+################
+Device Name: DC-C1
+Other Names: SW211
+################
+
+`
+ !
+ hostname DC-C1
+ username iseuser password 0 CC!E!nfr4
+ !
+ ip dhcp relay information trust-all
+!
+ip dhcp pool hq_v2000
+ network 10.1.100.0 255.255.255.0
+ default-router 10.1.100.1 
+!
+ip dhcp pool hq_v2001
+ network 10.1.101.0 255.255.255.0
+ default-router 10.1.101.1 
+ exit
+ !
+ login on-success log
+ !
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+!
+no cdp run
+!
+interface Loopback0
+ ip address 10.2.255.211 255.255.255.255
+ ip ospf 1 area 0
+!         
+interface Ethernet0/0
+ no switchport
+ ip address 10.2.20.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/1
+ no switchport
+ ip address 10.2.22.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/2
+ no switchport
+ ip address 10.2.119.1 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/3
+ no switchport
+ ip address 10.2.115.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/0
+ no switchport
+ ip address 10.2.114.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/1
+ no switchport
+ ip address 10.2.252.1 255.255.255.0
+ ip ospf 1 area 0
+!
+interface Ethernet1/2
+ no switchport
+ ip address 10.2.251.1 255.255.255.0
+ ip ospf 1 area 0
+!
+interface Ethernet1/3
+ no switchport
+ ip address 10.2.250.1 255.255.255.0
+ ip ospf 1 area 0
+ end
+
+
+!@SW202 : DC-C4
+conf t
+ banner motd `
+
+################
+Device Name: DC-C4
+Other Names: SW202
+################
+
+`
+ !
+ hostname DC-C4
+ !
+ vtp mode transparent
+ vlan 3999-4000
+  exit
+ 
+interface Loopback0
+ ip address 10.2.255.202 255.255.255.255
+ ip ospf 1 area 0
+!
+interface Ethernet0/0
+ no switchport
+ ip address 10.2.11.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/1
+ no switchport
+ ip address 10.2.13.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/2
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 4000
+ switchport mode trunk
+!
+interface Ethernet0/3
+ no switchport
+ ip address 10.2.109.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/0
+ no switchport
+ ip address 10.2.22.1 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/1
+ no switchport
+ ip address 10.2.21.1 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/2
+ no switchport
+ ip address 10.2.242.1 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/3
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 4000
+ switchport mode trunk
+ exit
+ !
+interface Vlan3999
+ ip address 10.2.202.11 255.255.255.248
+ ip ospf 1 area 0
+!
+interface Vlan4000
+ ip address 10.2.202.3 255.255.255.248
+ ip ospf 1 area 0
+ !
+ router ospf 1
+  end
+
+
+!@SW201 : DC-C3
+conf t
+ banner motd `
+
+################
+Device Name: DC-C3
+Other Names: SW201
+################
+
+`
+ !
+ hostname DC-C3
+ !
+ vtp mode transparent
+ vlan 3999-4000
+ no cdp run
+ !
+ 
+interface Loopback0
+ ip address 10.2.255.201 255.255.255.255
+ ip ospf 1 area 0
+!
+interface Ethernet0/0
+ no switchport
+ ip address 10.2.10.2 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet0/1
+ no switchport
+ ip address 10.2.12.2 255.255.255.252
+ ip ospf 1 area 0
+!         
+interface Ethernet0/2
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 4000
+ switchport mode trunk
+!
+interface Ethernet0/3
+ no switchport
+ ip address 10.2.109.1 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/0
+ no switchport
+ ip address 10.2.23.1 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/1
+ no switchport
+ ip address 10.2.20.1 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/2
+ no switchport
+ ip address 10.2.241.1 255.255.255.252
+ ip ospf 1 area 0
+!
+interface Ethernet1/3
+ switchport trunk encapsulation dot1q
+ switchport trunk native vlan 4000
+ switchport mode trunk
+ exit
+ ! 
+ interface Vlan3999
+ ip address 10.2.201.11 255.255.255.248
+ ip ospf 1 area 0
+!
+interface Vlan4000
+ ip address 10.2.201.3 255.255.255.248
+ ip ospf 1 area 0
+!
+router ospf 1
+ end
+
+
+!@SW602 : B3-D2
+conf t
+ banner motd `
+
+################
+Device Name: B3-D2
+Other Names: SW602
+################
+
+`
+ !
+ hostname B3-D2
+ vtp mode transparent
+ vlan 2000-2001
+  exit
+ no cdp run
+ !
+interface Loopback0
+ ip address 10.6.255.162 255.255.255.255
+!
+interface Ethernet0/0
+ no switchport
+ ip address 10.6.109.2 255.255.255.252
+!
+interface Ethernet0/1
+ no switchport
+ ip address 10.6.12.2 255.255.255.252
+!
+interface Ethernet0/2
+ no switchport
+ ip address 10.6.11.2 255.255.255.252
+!
+interface Ethernet2/0
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Vlan2000
+ ip address 10.6.100.3 255.255.255.0
+ standby 100 ip 10.6.100.1
+!
+interface Vlan2001
+ ip address 10.6.101.3 255.255.255.0
+ standby 0 ip 10.6.101.1
+ end
+
+
+!@SW601 : B3-D1
+conf t
+ banner motd `
+
+################
+Device Name: B3-D1
+Other Names: SW601
+################
+
+`
+ !
+ hostname B3-D1
+ !
+ vtp mode transparent
+ !
+ vlan 2000-2001
+  exit
+ no cdp run
+ !
+ interface Loopback0
+ ip address 10.6.255.161 255.255.255.255
+!
+interface Ethernet0/0
+ no switchport
+ ip address 10.6.109.1 255.255.255.252
+!
+interface Ethernet0/1
+ no switchport
+ ip address 10.6.13.2 255.255.255.252
+!
+interface Ethernet0/2
+ no switchport
+ ip address 10.6.10.2 255.255.255.252
+!
+interface Ethernet2/0
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Vlan2000
+ ip address 10.6.100.2 255.255.255.0
+ standby version 2
+ standby 100 ip 10.6.100.1
+ standby 100 priority 110
+!
+interface Vlan2001
+ ip address 10.6.101.2 255.255.255.0
+ standby 101 ip 10.6.101.1
+ end
+
+
+!@SW610 : B3-A1
+conf t
+ banner motd `
+
+################
+Device Name: B3-A1
+Other Names: SW610
+################
+
+`
+ !
+ hostname B3-A1
+ vtp mode transparent
+ vlan 2001
+  exit
+ no cdp run
+ !
+ interface Ethernet2/0
+ switchport trunk allowed vlan 1,2000
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+interface Ethernet2/1
+ switchport trunk allowed vlan 1,2000
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+!
+ interface Vlan2000
+  ip address 10.6.100.10 255.255.255.0
+  end
+
+
+!@SW700 : B4-A1
+conf t
+ banner motd `
+
+################
+Device Name: B4-A1
+Other Names: SW700
+################
+
+`
+ !
+ hostname B4-A1
+ !
+ no cdp run
+ end
+
+
+!@SP_2 : SP2
+conf t
+ banner motd `
+
+################
+Device Name: SP2
+Other Names: Global_SP2
+################
+
+`
+ !
+ hostname SP2
+ !
+
+interface Loopback0
+ description 6}00g~V%A5(zIAxx
+ ip address 101.101.101.101 255.255.255.255
+!
+interface Ethernet0/0
+ ip address 101.22.0.1 255.255.255.252
+!
+interface Ethernet0/1
+ ip address 101.40.0.1 255.255.255.252
+!         
+interface Ethernet0/2
+ ip address 101.51.0.1 255.255.255.252
+!
+interface Ethernet0/3
+ ip address 101.52.0.1 255.255.255.252
+!
+router bgp 10001
+ bgp router-id 101.101.101.101
+ bgp log-neighbor-changes
+ redistribute connected
+ neighbor 101.22.0.2 remote-as 65002
+ neighbor 101.40.0.2 remote-as 65004
+ neighbor 101.51.0.2 remote-as 65005
+ neighbor 101.52.0.2 remote-as 65005
+ end
+
+
+!@cEdge22 : DC-E2
+conf t
+ banner motd `
+
+################
+Device Name: DC-E2
+Other Names: cEdge22
+################
+
+`
+ !
+ hostname DC-E2
+ !
+vrf definition 999
+ rd 1:999
+ !
+ address-family ipv4
+  route-target export 1:999
+  route-target import 1:999
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+ !
+ ipv6 unicast-routing
+ !
+ 
+interface Ethernet0/0
+ ip address 10.2.201.2 255.255.255.248
+ ip ospf 1 area 0
+!
+interface Ethernet0/0.3999
+ encapsulation dot1Q 3999
+ vrf forwarding 999
+ ip address 10.2.201.10 255.255.255.248
+ ip mtu 1496
+ ip ospf 999 area 0
+!
+interface Ethernet0/1
+ ip address 10.2.202.2 255.255.255.248
+ ip ospf 1 area 0
+!
+interface Ethernet0/1.3999
+ encapsulation dot1Q 3999
+ vrf forwarding 999
+ ip address 10.2.202.10 255.255.255.248
+ no ip redirects
+ ip mtu 1496
+ ip ospf 999 area 0
+!
+interface Ethernet0/2
+ no ip address
+ shutdown
+!
+interface Ethernet0/3
+ no ip address
+ shutdown
+ !
+ 
+router ospf 999 vrf 999
+ router-id 1.99.2.2
+ timers throttle spf 200 1000 10000
+!
+router ospf 1
+ timers throttle spf 200 1000 10000
+ exit
+!
+ip route 0.0.0.0 0.0.0.0 10.2.201.3
+end
+
+
+!@host11 : HQ-P1
+conf t
+ banner motd `
+
+################
+Device Name: HQ-P1
+Other Names: host11
+################
+
+`
+ !
+ hostname HQ-P1
+!
+interface Ethernet0/0
+ ip address dhcp
+ end
+ 
+
+!@host12 : HQ-P2
+conf t
+ banner motd `
+
+################
+Device Name: HQ-P2
+Other Names: host12
+################
+
+`
+ !
+ hostname HQ-P2
+ !
+ int e0/0
+  ip add dhcp
+  end
+
+
+!@host71 : B4-P1
+conf t
+ banner motd `
+
+################
+Device Name: B4-P1
+Other Names: host71
+################
+
+`
+ !
+ hostname B4-P1
+ !
+ int e0/0
+  ip add dhcp
+  end
+ 
+ 
+!@host72 : B4-P2
+conf t
+ banner motd `
+
+################
+Device Name: B4-P2
+Other Names: host72
+################
+
+`
+ !
+ hostname B4-P2
+ !
+ int e0/0
+  ip add dhcp
+  end
+  
+  
