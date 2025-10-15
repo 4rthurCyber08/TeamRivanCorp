@@ -1,0 +1,41 @@
+Configure AAA Authentication (RADIUS)
+1. Have a local account to fallback on.
+
+!@CSR1000v
+conf t
+ username admin privilege 15 secret pass
+ end
+
+2. Configure a RADIUS Server
+
+!@CSR1000v
+conf t
+ aaa new-model
+ radius server WINRAD
+  address ipv4 208.8.8.11 auth-port 1812 acct-port 1813
+  key C1sc0123
+  end
+
+3. (Optional) Configure a RADIUS Server Group
+
+!@CSR1000v
+conf t
+ aaa group server radius RADGROUP
+  server name WINRAD
+  end
+
+4. Configure AAA
+
+!@CSR1000v
+conf t
+ ! for logging in
+ aaa authentication login default group RADGROUP local
+ ! for priv 15 access
+ aaa authorization exec default group RADGROUP local
+ ! for enable access
+ aaa authentication enable default group RADGROUP enable 
+ !
+ line vty 0 14
+  login authentication default
+ nd
+
