@@ -4,5 +4,5 @@ config
  certificate generate webadmin
  end
 save config
-
+show network summary
 reset system
