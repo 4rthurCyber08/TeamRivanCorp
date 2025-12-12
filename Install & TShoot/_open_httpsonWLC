@@ -1,0 +1,6 @@
+config
+ network secureweb enable
+ end
+save config
+
+reset system
