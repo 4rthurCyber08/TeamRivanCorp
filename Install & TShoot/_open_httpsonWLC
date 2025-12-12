@@ -1,5 +1,7 @@
 config
  network secureweb enable
+ network webmode enable
+ certificate generate webadmin
  end
 save config
 
