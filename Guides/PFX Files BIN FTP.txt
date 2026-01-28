@@ -1,0 +1,4 @@
+ftp [ip]
+- login
+binary
+put 
