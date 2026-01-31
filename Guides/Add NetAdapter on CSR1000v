@@ -1,0 +1,11 @@
+1. Turn off the VM
+
+2. Add one via VMWare
+
+3. Then, edit the .vmx file.
+   An entry for ethernet3 will appear on the bottom,
+   Modify the ethernet3.virtualDev to vmxnet3
+
+Ex.
+
+ethernet3.virtualDev = "vmxnet3"
