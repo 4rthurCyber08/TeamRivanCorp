@@ -1,0 +1,18 @@
+Modify the file:
+
+!@NetOps
+nano /opt/jumpserver/config/config.txt
+
+or
+
+!@NetOps
+nano /opt/jumpserver/.env
+
+or
+
+!@NetOps
+nano /opt/jumpserver/config.yml
+
+
+
+DOMAINS=x.x.x.x:xxxx
