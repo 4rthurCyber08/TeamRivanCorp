@@ -13,6 +13,9 @@ or
 !@NetOps
 nano /opt/jumpserver/config.yml
 
+or
 
+!@NetOps
+nano /opt/jumpserver-installer-v4.10.4/.env
 
 DOMAINS=x.x.x.x:xxxx
