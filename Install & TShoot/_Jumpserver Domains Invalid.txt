@@ -19,3 +19,10 @@ or
 nano /opt/jumpserver-installer-v4.10.4/.env
 
 DOMAINS=x.x.x.x:xxxx
+
+
+
+edit
+
+cd /opt/jumpserver-  [TAB]
+./jmsctl.sh install
