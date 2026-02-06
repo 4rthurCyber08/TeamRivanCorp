@@ -22,7 +22,8 @@ DOMAINS=x.x.x.x:xxxx
 
 
 
-edit
+edit  nano .env
 
 cd /opt/jumpserver-  [TAB]
 ./jmsctl.sh install
+./jmsctl.sh restart
