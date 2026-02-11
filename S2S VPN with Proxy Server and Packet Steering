@@ -1,0 +1,319 @@
+~~~
+!@UTM-PH
+conf t
+ hostname UTM-PH
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ line vty 0 14
+  transport input all
+  password pass
+  login local
+  exec-timeout 0 0
+ int g1
+  ip add 208.8.8.11 255.255.255.0
+  ip nat outside
+  no shut
+ int g2
+  ip add 192.168.102.11 255.255.255.0
+  no shut
+ int g3
+  ip add 11.11.11.113 255.255.255.224
+  ip nat inside
+  no shut
+ !
+ ip nat inside source static 11.11.11.100 208.8.8.101
+ !
+ ip route 0.0.0.0 0.0.0.0 208.8.8.2
+ ip name-server 8.8.8.8 1.1.1.1
+ ip domain lookup
+ !
+ username admin privilege 15 secret pass
+ ip http server
+ ip http secure-server
+ ip http authentication local
+ end
+wr
+!
+~~~
+
+<br>
+
+~~~
+!@UTM-JP
+conf t
+ hostname UTM-JP
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ line vty 0 14
+  transport input all
+  password pass
+  login local
+  exec-timeout 0 0
+ int g1
+  ip add 208.8.8.12 255.255.255.0
+  ip nat outside
+  no shut
+ int g2
+  ip add 192.168.102.12 255.255.255.0
+  no shut
+ int g3
+  ip add 21.21.21.213 255.255.255.240
+  ip add 22.22.22.223 255.255.255.192 secondary
+  ip nat inside
+  no shut
+ !
+ ip nat inside source static 21.21.21.211 208.8.8.201
+ ip nat inside source static 22.22.22.221 208.8.8.202
+ !
+ ip route 0.0.0.0 0.0.0.0 208.8.8.2
+ ip name-server 8.8.8.8 1.1.1.1
+ ip domain lookup
+ !
+ username admin privilege 15 secret pass
+ ip http server
+ ip http secure-server
+ ip http authentication local
+ end
+wr
+!
+~~~
+
+<br>
+
+~~~
+!@NetOps-PH
+nmcli connection add \
+type ethernet \
+con-name VMNET2 \
+ifname ens192 \
+ipv4.method manual \
+ipv4.addresses 192.168.102.6/24 \
+autoconnect yes
+
+nmcli connection up VMNET2
+
+
+nmcli connection add \
+type ethernet \
+con-name VMNET3 \
+ifname ens224 \
+ipv4.method manual \
+ipv4.addresses 11.11.11.100/27 \
+autoconnect yes
+
+nmcli connection up VMNET3
+
+
+nmcli connection add \
+type ethernet \
+con-name BRIDGED \
+ifname ens256 \
+ipv4.method manual \
+ipv4.addresses 10.#$34T#.1.6/24 \
+autoconnect yes
+
+nmcli connection up BRIDGED
+
+
+ip route add 10.0.0.0/8 via 10.#$34T#.1.4 dev ens256
+ip route add 200.0.0.0/24 via 10.#$34T#.1.4 dev ens256
+ip route add 0.0.0.0/0 via 11.11.11.113 dev ens224
+~~~
+
+<br>
+
+~~~
+!@BLDG-JP
+sudo su
+ifconfig eth0 21.21.21.211 netmask 255.255.255.248 up
+route add default gw 21.21.21.213 
+ping 21.21.21.213
+~~~
+
+
+
+
+Do Site-2-Site VPN
+
+~~~
+!@UTM-PH
+conf t
+ crypto ikev2 proposal WEBUI-PROPOSAL-Tunnel1 
+  encryption aes-cbc-256 aes-cbc-192 aes-cbc-128
+  integrity sha512 sha384 sha256 sha1 md5
+  group 2 5
+  exit
+ crypto ikev2 policy WEBUI-POLICY 
+  match fvrf any
+  proposal WEBUI-PROPOSAL-Tunnel1
+  exit
+ crypto ikev2 keyring WEBUI-KEYS
+  peer WEBUI-PEER-208.8.8.12
+   description KEY-PEER-208.8.8.12 
+   address 208.8.8.12 255.255.255.0
+   pre-shared-key C1sc0123
+   exit
+  exit
+ !
+ crypto ikev2 profile WEBUI-IKEV2-PROFILE
+  match fvrf any
+  match identity remote address 208.8.8.12 255.255.255.255 
+  authentication remote pre-share
+  authentication local pre-share
+  keyring local WEBUI-KEYS
+  exit
+ !
+ crypto ipsec transform-set WEBUI-TS-Tunnel1 esp-aes esp-sha-hmac 
+  mode tunnel
+  exit
+ !
+ crypto ipsec profile WEBUI-IPSEC-PROFILE-Tunnel1
+  set transform-set WEBUI-TS-Tunnel1 
+  set ikev2-profile WEBUI-IKEV2-PROFILE
+  exit
+ !
+ interface Tunnel1
+  ip address 172.16.1.1 255.255.255.252
+  tunnel source GigabitEthernet1
+  tunnel mode ipsec ipv4
+  tunnel destination 208.8.8.12
+  tunnel protection ipsec profile WEBUI-IPSEC-PROFILE-Tunnel1
+  exit
+ !
+ ip route 21.21.21.208 255.255.255.248 Tunnel1
+ !
+ ip access-list extended NAT-ACL
+  10 deny ip any 21.21.21.208 0.0.0.7
+  exit
+ !
+ ip nat inside source list NAT-ACL interface GigabitEthernet1 overload
+~~~
+
+<br>
+
+~~~
+!@UTM-JP
+conf t
+ crypto ikev2 proposal WEBUI-PROPOSAL-Tunnel1 
+  encryption aes-cbc-256 aes-cbc-192 aes-cbc-128
+  integrity sha512 sha384 sha256 sha1 md5
+  group 2 5
+  exit
+ crypto ikev2 policy WEBUI-POLICY 
+  match fvrf any
+  proposal WEBUI-PROPOSAL-Tunnel1
+  exit
+ crypto ikev2 keyring WEBUI-KEYS
+  peer WEBUI-PEER-208.8.8.11
+   description KEY-PEER-208.8.8.11 
+   address 208.8.8.11 255.255.255.0
+   pre-shared-key C1sc0123
+   exit
+  exit
+ !
+ crypto ikev2 profile WEBUI-IKEV2-PROFILE
+  match fvrf any
+  match identity remote address 208.8.8.11 255.255.255.255 
+  authentication remote pre-share
+  authentication local pre-share
+  keyring local WEBUI-KEYS
+  exit
+ !
+ crypto ipsec transform-set WEBUI-TS-Tunnel1 esp-aes esp-sha-hmac 
+  mode tunnel
+  exit
+ !
+ crypto ipsec profile WEBUI-IPSEC-PROFILE-Tunnel1
+  set transform-set WEBUI-TS-Tunnel1 
+  set ikev2-profile WEBUI-IKEV2-PROFILE
+  exit
+ !
+ interface Tunnel1
+  ip address 172.16.1.2 255.255.255.252
+  tunnel source GigabitEthernet1
+  tunnel mode ipsec ipv4
+  tunnel destination 208.8.8.11
+  tunnel protection ipsec profile WEBUI-IPSEC-PROFILE-Tunnel1
+  exit
+ !
+ ip route 11.11.11.96 255.255.255.224 Tunnel1
+ !
+ ip access-list extended NAT-ACL
+  10 deny   ip any 11.11.11.96 0.0.0.31
+  exit
+ !
+ ip nat inside source list NAT-ACL interface GigabitEthernet1 overload
+ end
+~~~
+
+
+Packet Steering 
+~~~
+!@UTM-PH
+conf t
+ ip access-list extended NETOPS-PBR
+  
+  permit ip host 11.11.11.100 any
+  exit
+ !
+ route-map NETOPS-TO-TUNNEL permit 10
+  match ip address NETOPS-PBR
+  set interface tunnel1
+  exit
+ !
+ interface g3
+  ip policy route-map NETOPS-TO-TUNNEL
+  end
+show route-map
+~~~
+
+
+
+
+
+Forward Proxy Server
+
+~~~
+!@NetOps
+nano /etc/sockd.conf
+~~~
+
+
+Modify:
+~~~
+logoutput: syslog
+
+internal: ens192 port = 1080
+external: ens224
+
+method: none
+
+client pass {
+  from: 0.0.0.0/0 to: 0.0.0.0/0
+}
+
+pass {
+  from: 0.0.0.0/0 to: 0.0.0.0/0
+  protocol: tcp udp
+}
+~~~
+
+
+
+
+
+
+
+!@Firefox
+Connection Settings:
+- Manual Proxy Configuration
+  SOCKS Host (v5): 
+    192.168.102.6  Port 1080
+
+
+!@NetOps
+sudo systemctl start sockd
