@@ -1,0 +1,19 @@
+~~~
+!@TinyCore
+vi /etc/resolv.conf
+~~~
+
+<br>
+
+~~~
+nameserver 8.8.8.8
+~~~
+
+<br>
+
+Do NOT be SUDO
+~~~
+!@TinyCore
+tce-load -wi nano
+echo nano.tcz >> /mnt/sda1/tce/onboot.lst
+~~~
