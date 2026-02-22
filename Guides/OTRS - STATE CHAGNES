@@ -1,0 +1,134 @@
+Admin > Machine State
+
+Requested 
+
+	v
+    
+	WorkOrder (REQUEST)  >  Pending Approval
+	
+	Title: REQUEST
+	Instruction: Discovered a possible issue in the network, please investigate
+    
+	v
+	
+Pending Approval
+  
+    v
+	
+	WorkOrder : Decision (IMPACT ANALYSIS)  >  Approved
+	
+	Title: IMPACT ANALYSIS
+	Instruction: Vulnerability has been found on the Switch
+	
+	v
+	
+Approved
+  
+    v
+	
+	WorkdOrder : Approval (APPROVE / DENY)
+	
+	Title: APPROVE / DENY
+	Instruction: A decision to modify the configuration of the switch
+                 To prevent MAC Flooding attacks configure PortSecurity
+	
+	v
+  
+In Progress
+    
+	v
+
+    WorkOrder (IMPLEMENT CHANGE)
+	
+	Title: IMPLEMENTATION
+	Instruction: Here are the necessary configs to be applied to switches
+	
+	
+	v
+
+Pending PIR
+
+    v
+	
+	WorkOrder : PIR (Review / Reporting)
+	
+	Title: REVIEW / REPORT
+	Instruction: Configurations Implemented
+                 Advantages
+                 Disadvantages
+
+                 Possible Risks:
+                 Future:
+				 
+	v
+
+Successful
+
+
+
+
+
+
+
+
+
+
+
+
+
+************ CONDITIONS
+1. REQUEST
+Expression: Workorder - REQUEST - STATE - IS - ACCEPTED
+Actions: Change - 00000xxxx - STATE - SET - PENDING APPROVAL
+
+
+2. IMPACT ANALYSIS
+Expression: Workorder - IMPACT ANALYSIS - STATE - IS - ACCEPTED
+Actions: Change - 00000xxxx - STATE - SET - APPROVED
+
+
+3. APPROVAL
+Expression: Workorder - APPROVAL - STATE - IS - ACCEPTED
+Actions: Change - 00000xxxx - STATE - SET - IN PROGRESS
+
+
+4. IMPLEMENTATION
+Expression: Workorder - APPROVAL - STATE - IS - ACCEPTED
+Actions: Change - 00000xxxx - STATE - SET - PENDING PIR
+
+
+5. REVIEW/REPORT
+Expression: Workorder - APPROVAL - STATE - IS - CLOSED
+Actions: Change - 00000xxxx - STATE - SET - SUCCESS
+
+
+
+
+
+
+
+
+
+
+
+************* EXCECUTION
+1. REQUEST
+Report: Accepted/ NOTED
+
+
+2. IMPACT ANALYSIS
+Report: The issue was discovered on the SWITCH
+
+
+3. APPROVE / DENY
+Report: THERE WAS A LACK OF PORTSEC, DEPARTMENT X WILL HANDLE THE WORKORDER\
+
+
+4. IMPLEMENTATION
+Report: Here are te necessary Configs to implement PortSec
+Link: CoreBABA & CoreTAAS
+
+
+5. REPORT / REVIEW
+Report: Successful Application
+Link: Ticket
