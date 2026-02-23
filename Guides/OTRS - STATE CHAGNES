@@ -1,134 +1,491 @@
-Admin > Machine State
+## ITSM Change Process
 
-Requested 
+### STEP 1 - User reports an issue to [Tier 1 NOC] with the internet slowing down
 
-	v
-    
-	WorkOrder (REQUEST)  >  Pending Approval
-	
-	Title: REQUEST
-	Instruction: Discovered a possible issue in the network, please investigate
-    
-	v
-	
-Pending Approval
+__Ticket__
+- Type: Incident
+- To: [NOC] Tier 1 - Monitoring & First Response
+- Service: [NOC] Infrastructure & Application Monitoring
+- SLA: Performance Management SLA
+- Subject: Network Issue
+- Priority: 4 High
   
-    v
-	
-	WorkOrder : Decision (IMPACT ANALYSIS)  >  Approved
-	
-	Title: IMPACT ANALYSIS
-	Instruction: Vulnerability has been found on the Switch
-	
-	v
-	
-Approved
+- Text: 
+~~~
+The network is very slow, and we are unable to reliably connect to services such as servers and printers. 
+Additionally, IP phone extensions/numbers are disappearing intermittently. 
+This is impacting our ability to make and receive calls.
+~~~
+
+<br>
+
+
+__Admin [Rivan Cyber] responds to ticket.__
+- Reply  
+~~~
+Hi user1,
+
+Thank you for reporting this issue.
+
+We are currently investigating the network performance problems and the IP phone registration issue. 
+Initial checks show possible network congestion or a connectivity disruption affecting multiple services.
+
+Thank you for your patience while we work to resolve this.
+
+Best regards,
+IT Support Team
+~~~
+
+
+<br>
+<br>
+
+
+### STEP 2 - User checks the logs, then discover that Certain Switches have unusually high traffic.
+~~~
+!@Cisco
+show process cpu | inc uti
+~~~
+
+<br>
+
+:: Move :: Escalate the issue to [Tier 2 NOC] 
+
+<br>
+
+__Change Owner__
+- Subject: Network Issue T2 Escalation
+- Text: 
+~~~
+Issue summary:
+  Network extremely slow
+  Cannot access servers and printers
+  IP phones losing registration
+  Multiple users affected
+
+Troubleshooting performed by Tier 1:
+  Verified issue affects multiple users
+  Confirmed both wired/wireless impacted
+  Restarted affected workstation(s)
+  Verified no local NIC errors
+  Basic connectivity tests failed/intermittent
+
+Reason for escalation:
+  Issue appears to be infrastructure-related (core switch / firewall / VoIP system). 
+  Requires Tier 2 investigation.
+~~~
+
+<br>
+
+__Update the User__
+- Reply
+~~~
+Hi user1,
+
+Your ticket has been escalated to our Tier 2 Network Team for further investigation. 
+They are currently reviewing the infrastructure components involved.
+
+We will provide updates as soon as more information is available.
+
+Thank you for your patience.
+~~~
+
+
+<br>
+<br>
+
+
+### STEP 3 - Create an ITSM Change with a Work Order for Change [Request] Creation 
+
+__ITSM Change__
+- Title: Implement Port Security on Access Switches to Prevent MAC Flooding
+- Description: 
+~~~
+Network is currently slow caused by a traffic congestion from CoreSwitches
+CoreSwitches consuming high CPU usage caused by a flood of MAC Addresses.
+Switches are currently lacking proper security implementations to prevent L2 attacks.
+~~~
+
+<br>
+
+- Justification:
+~~~
+CPU 99%
+~~~
+
+<br>
+
+- Category: 4 High
+- Impact: 4 High
+- Priority: 4 High
+
+
+<br>
+<br>
+
+
+__WorkOrder [REQUEST]__
+- Title: Change Request Creation
+- Workorder Type: Approval
+- Planned Time: +1 Day
+- Description:  
+~~~
+Users reported slow connectivity. Investigation identified high CPU utilization on Cisco access switch due to MAC address table flooding. The switch is vulnerable to MAC flooding attack.
+Requesting change approval to implement port security configuration on affected access ports.
+
+
+Reason for Change:
+  Mitigate network traffic congestion.
+  Prevent recurrence of MAC flooding attack.
+  Improve switch stability.
+  Enhance Layer 2 security posture.
+
+
+Proposed Solution:
+  Enable port security.
+  Limit MAC addresses per port.
+  Enable violation restrict/shutdown mode.
+  Enable sticky MAC where applicable.
+~~~
+
+
+<br>
+
+
+- Link: Hardware (CoreSwitch)
+- Involved Persons: Manager & CAB (Change Advisory Board)
+- WorkOrder Agent: Admin
+
+
+
+<br>
+<br>
+
+
+
+### STEP 4 - Create a Work Order for [Impact Analysis] & Plan Assessment
+
+ITIL-Based Impact Analysis Framework
+- Identify the Scope of the Change - Determine affected users, services, network, hardware, etc
+- Identify Stakeholders - Who are involved in managing the change
+- Assess Impact Levels - Structured Categories
+- Identify Risks - Document mitigation and rollback plans.
+- Analyze Dependencies - Map related systems and processes
+- Document Findings - Summary of scope, stakeholders, risks, impact, and dependencies
+- Decision Support - CAB approval, Scheduling
+
+
+<br>
+
+
+__WorkOrder [IMPACT ANALYSIS]__
+- Title: Technical & Risk Assestment / Action Plan
+- Workorder Type: Approval
+- Planned Time: +1 Day
+- Description:
+~~~
+Technical Analysis
+Enabling port security may:
+  Temporarily disrupt connected devices
+  Cause port shutdown if misconfigured
+  Requires maintenance window
+  Minimal downtime expected (per access port configuration)
   
-    v
-	
-	WorkdOrder : Approval (APPROVE / DENY)
-	
-	Title: APPROVE / DENY
-	Instruction: A decision to modify the configuration of the switch
-                 To prevent MAC Flooding attacks configure PortSecurity
-	
-	v
   
-In Progress
-    
-	v
-
-    WorkOrder (IMPLEMENT CHANGE)
-	
-	Title: IMPLEMENTATION
-	Instruction: Here are the necessary configs to be applied to switches
-	
-	
-	v
-
-Pending PIR
-
-    v
-	
-	WorkOrder : PIR (Review / Reporting)
-	
-	Title: REVIEW / REPORT
-	Instruction: Configurations Implemented
-                 Advantages
-                 Disadvantages
-
-                 Possible Risks:
-                 Future:
-				 
-	v
-
-Successful
+Risk Assessment:
+Risk	            Likelihood	   Impact	Mitigation
+Port shutdown	    Medium	       Medium	Configure restrict mode first
+User disconnection	Low	Low	       Change   during maintenance window
+Misconfiguration	Low	Medium	   Peer     review config
 
 
+Impact Scope
+Affected Devices:
+Cisco Access Switch SW-ACC-01
+SW-ACC-02
 
 
+Affected Users:
+Office Floor 2 (~45 users)
+No impact to core or WAN
 
 
+Backout Plan
+!@Switch
+conf t
+ int range fa0/1-12
+  no switchport port-security
+  shut
+  no shut
+  end
+~~~
 
 
+<br>
+<br>
 
 
+### STEP 5 - Create a Work Order for [Approval/Denial]
+CAB (Change Advisory Board) Members:
+- Network Manager
+- IT Operations Lead
+- Security Officer
+
+<br>
+
+__Work Order [APPROVAL/DENIAL]__
+- Title:  CAB Review Approval/Denial
+- Workorder Type: Decision
+- Planned Time: +1 Day
+- Description:
+~~~
+Approval Considerations
+- Minimal downtime
+- Security Imporvement
+- Backout Plan
+
+Decision:
+ Proposed Maintenance Window
+ Schedule: 22:00 - 23:30
+~~~
 
 
+<br>
+<br>
 
-************ CONDITIONS
+
+### STEP 6 - Create a Work Order for [Implementation]
+
+__Work Order [IMPLEMENTATION]__
+Title: Implementation Procedure 
+- Workorder Type: Workorder
+- Planned Time: +1 Day
+- Description:
+~~~
+Pre-implementation Tasks:
+Backup Configs:
+
+!@Cisco
+copy run start
+copy run ftp:
+
+- Save external backup to TFTP
+- Notify users of maintenance window
+- Confirm monitoring alerts configured
+
+Implementation:
+!@Cisco
+conf t
+interface range fa0/6,fa0/8
+ switchport mode access
+ switchport port-security
+ switchport port-security maximum 1
+ switchport port-security violation restrict
+ switchport port-security mac-address sticky
+end
+ 
+ 
+Post Implementation
+- CPU utilization normalized
+- MAC address table state
+- No unexpected port shutdowns
+- Users confirmed stable connectivity [Ticket Reply]
+~~~
+
+
+<br>
+<br>
+
+
+### STEP 7 - Create a Work Order for Post Implementation Review PIR [Report]
+
+__Work Order [REPORT/REVIEW]__
+Title: PIR Incident Report
+- Workorder Type: PIR
+- Planned Time: +1 Day
+- Description:
+~~~
+Review Date: 3 days - 1 week after change
+
+Port security was configured on the core switches to improve network security by limiting MAC addresses per port and preventing unauthorized device connections.
+The objective was to enhance network access control and reduce the risk of rogue devices.
+
+Observations
+- CPU usage reduced from 85% → 18%
+- No further MAC flooding detected
+- No user complaints
+- Port violations logged correctly
+
+Lessons Learned
+- Port security was not enabled by default
+- Access switches lacked L2 security hardening baseline
+- Need standard switch hardening template
+
+
+Idealy Performed with RCA (Root Cause Analysis)
+
+~~~
+
+
+<br>
+<br>
+
+
+### STEP 8 - Create Conditions to allow Change States
+__A Review on the 5 ITSM Change Process__
+
+
 1. REQUEST
 Expression: Workorder - REQUEST - STATE - IS - ACCEPTED
 Actions: Change - 00000xxxx - STATE - SET - PENDING APPROVAL
 
+<br>
 
 2. IMPACT ANALYSIS
 Expression: Workorder - IMPACT ANALYSIS - STATE - IS - ACCEPTED
 Actions: Change - 00000xxxx - STATE - SET - APPROVED
 
+<br>
 
 3. APPROVAL
 Expression: Workorder - APPROVAL - STATE - IS - ACCEPTED
 Actions: Change - 00000xxxx - STATE - SET - IN PROGRESS
 
+<br>
 
 4. IMPLEMENTATION
 Expression: Workorder - APPROVAL - STATE - IS - ACCEPTED
 Actions: Change - 00000xxxx - STATE - SET - PENDING PIR
 
+<br>
 
 5. REVIEW/REPORT
 Expression: Workorder - APPROVAL - STATE - IS - CLOSED
 Actions: Change - 00000xxxx - STATE - SET - SUCCESS
 
 
+<br>
+<br>
 
+### STEP 9 - Report on every single Work Order to Change states
 
+__Review__
 
-
-
-
-
-
-
-************* EXCECUTION
 1. REQUEST
-Report: Accepted/ NOTED
+- Formally propose a change to IT infrastructure, service, or configuration.
+This stage ensures:
+  The change is documented
+  The business need is clear
+  Initial scope is defined
+
+Terms:
+  RFC (Request for Change) – Formal proposal
+  Change Record – The official tracking object
+  Change Initiator – Person submitting the RFC
+  Business Justification – Why this change is needed
+  Change Category – Infrastructure / Application / Network / Security
+  Priority – Based on Impact + Urgency
+
+A complete, documented Change record ready for analysis.
+
+
+<br>
 
 
 2. IMPACT ANALYSIS
-Report: The issue was discovered on the SWITCH
+- Assess risk, impact, dependencies, and feasibility before approval.
+
+Key Activities:
+- Identify affected services and users
+- Analyze technical dependencies
+- Evaluate risk level
+- Estimate downtime
+- Define rollback plan
+- Assign risk score
 
 
-3. APPROVE / DENY
-Report: THERE WAS A LACK OF PORTSEC, DEPARTMENT X WILL HANDLE THE WORKORDER\
+Terms:  
+  Impact – Business/service effect if change fails
+  Risk – Likelihood × Impact
+  Risk Matrix – Used to score change
+  CI (Configuration Item) – Component in CMDB
+  Dependency Mapping – Relationship between systems
+  Rollback Plan – Recovery procedure
+  Mitigation Plan – Risk reduction actions
+
+Framework:
+  Risk Matrix
+
+<br>
+
+
+3. APPROVAL/DENIAL
+- Ensure governance and business alignment before execution.
+
+Present change to CAB
+Review risk & impact analysis
+Approve, reject, or request modification
+Schedule implementation window
+
+Terms:
+  CAB (Change Advisory Board) – Group reviewing changes
+  ECAB – Emergency CAB
+  Change Manager – Process owner
+  Approval Workflow
+  Segregation of Duties
+  Compliance & Audit Trail
+
+
+Framework:
+  SOX / ISO 27001 control alignment
+  Authorization Matrix
+
+
+<br>
 
 
 4. IMPLEMENTATION
-Report: Here are te necessary Configs to implement PortSec
-Link: CoreBABA & CoreTAAS
+- Execute the approved change in a controlled and documented manner.
+
+Follow implementation plan and Execute technical tasks.
+
+Terms:
+  Change Window
+  Maintenance Window
+  Work Orders
+  Deployment Plan
+  Backout Plan
+  Release Management
+  Technical Validation
 
 
-5. REPORT / REVIEW
-Report: Successful Application
-Link: Ticket
+Control Mechanisms
+  Real-time monitoring
+  Peer review
+  Go/No-Go decision checkpoint
+  Change freeze policies
+  
+
+<br>
+
+  
+5. REVIEW/REPORT
+
+Evaluate effectiveness and capture lessons learned.
+
+Conduct PIR meeting
+Compare expected vs outcome
+Identify Root Cause
+Update documentation
+
+Terms:
+  PIR (Post Implementation Review)
+  RCA (Root Cause Analysis)
+  Lessons Learned
+  KPI Review
+  Change Success Rate
+  Continuous Improvement
+  
+Framework:
+PCDA (Plan-Do-Check-Act)
+CSI (Continual Service Improvement)
