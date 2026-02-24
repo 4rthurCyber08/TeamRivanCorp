@@ -17,3 +17,8 @@ Do NOT be SUDO
 tce-load -wi nano
 echo nano.tcz >> /mnt/sda1/tce/onboot.lst
 ~~~
+
+
+
+rm -rf /tmp/tce/*
+rm -rf /etc/sysconfig/tcedir/optional/*
