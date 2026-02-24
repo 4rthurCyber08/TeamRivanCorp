@@ -1,26 +1,31 @@
 ## ITSM Change Process
 
-### STEP 1 - User reports an issue to [Tier 1 NOC] with the internet slowing down
+### STEP 1 - User reports an issue to [Tier 1 NOC] with the internet slowing down  
 
-__Ticket__
-- Type: Incident
-- To: [NOC] Tier 1 - Monitoring & First Response
-- Service: [NOC] Infrastructure & Application Monitoring
-- SLA: Performance Management SLA
-- Subject: Network Issue
-- Priority: 4 High
-  
-- Text: 
+__Ticket__  
+- Type: Incident  
+- To: [NOC] Tier 1 - Monitoring & First Response  
+- Service: [NOC] Infrastructure & Application Monitoring  
+- SLA: Performance Management SLA  
+- Subject: Network Issue  
+- Priority: 4 High  
+
+<br>
+
+- Text:   
 ~~~
 The network is very slow, and we are unable to reliably connect to services such as servers and printers. 
 Additionally, IP phone extensions/numbers are disappearing intermittently. 
 This is impacting our ability to make and receive calls.
 ~~~
 
-<br>
+
+&nbsp;
+---
+&nbsp;
 
 
-__Admin [Rivan Cyber] responds to ticket.__
+__Admin [Rivan Cyber] responds to ticket.__  
 - Reply  
 ~~~
 Hi user1,
@@ -40,6 +45,9 @@ IT Support Team
 <br>
 <br>
 
+---
+&nbsp;
+
 
 ### STEP 2 - User checks the logs, then discover that Certain Switches have unusually high traffic.
 ~~~
@@ -47,11 +55,15 @@ IT Support Team
 show process cpu | inc uti
 ~~~
 
-<br>
-
-:: Move :: Escalate the issue to [Tier 2 NOC] 
 
 <br>
+
+
+`:: Move ::`  Escalate the issue to [Tier 2 NOC] 
+
+
+<br>
+
 
 __Change Owner__
 - Subject: Network Issue T2 Escalation
@@ -75,7 +87,11 @@ Reason for escalation:
   Requires Tier 2 investigation.
 ~~~
 
-<br>
+
+&nbsp;
+---
+&nbsp;
+
 
 __Update the User__
 - Reply
@@ -94,6 +110,9 @@ Thank you for your patience.
 <br>
 <br>
 
+---
+&nbsp;
+
 
 ### STEP 3 - Create an ITSM Change with a Work Order for Change [Request] Creation 
 
@@ -106,22 +125,28 @@ CoreSwitches consuming high CPU usage caused by a flood of MAC Addresses.
 Switches are currently lacking proper security implementations to prevent L2 attacks.
 ~~~
 
+
 <br>
+
 
 - Justification:
 ~~~
-CPU 99%
+CPU utilization for five seconds: 99%/0%; one minute: 6%; five minutes: 6%
+ 272           0           2          0  0.00%  0.00%  0.00%   0 Routing Topology
 ~~~
 
+
 <br>
+
 
 - Category: 4 High
 - Impact: 4 High
 - Priority: 4 High
 
 
-<br>
-<br>
+&nbsp;
+---
+&nbsp;
 
 
 __WorkOrder [REQUEST]__
@@ -150,39 +175,43 @@ Proposed Solution:
 
 
 <br>
+<br>
 
 
-- Link: Hardware (CoreSwitch)
-- Involved Persons: Manager & CAB (Change Advisory Board)
-- WorkOrder Agent: Admin
-
+- Link: Hardware (CoreSwitch)  
+- Involved Persons: Manager & CAB (Change Advisory Board)  
+- WorkOrder Agent: Admin  
 
 
 <br>
 <br>
 
+---
+&nbsp;
 
 
 ### STEP 4 - Create a Work Order for [Impact Analysis] & Plan Assessment
 
-ITIL-Based Impact Analysis Framework
-- Identify the Scope of the Change - Determine affected users, services, network, hardware, etc
-- Identify Stakeholders - Who are involved in managing the change
-- Assess Impact Levels - Structured Categories
-- Identify Risks - Document mitigation and rollback plans.
-- Analyze Dependencies - Map related systems and processes
-- Document Findings - Summary of scope, stakeholders, risks, impact, and dependencies
-- Decision Support - CAB approval, Scheduling
+__ITIL-Based Impact Analysis Framework__  
+- Identify the Scope of the Change - Determine affected users, services, network, hardware, etc  
+- Identify Stakeholders - Who are involved in managing the change  
+- Assess Impact Levels - Structured Categories  
+- Identify Risks - Document mitigation and rollback plans.  
+- Analyze Dependencies - Map related systems and processes  
+- Document Findings - Summary of scope, stakeholders, risks, impact, and dependencies  
+- Decision Support - CAB approval, Scheduling  
 
 
-<br>
+&nbsp;
+---
+&nbsp;
 
 
-__WorkOrder [IMPACT ANALYSIS]__
-- Title: Technical & Risk Assestment / Action Plan
-- Workorder Type: Approval
-- Planned Time: +1 Day
-- Description:
+__WorkOrder [IMPACT ANALYSIS]__  
+- Title: Technical & Risk Assestment / Action Plan  
+- Workorder Type: Approval  
+- Planned Time: +1 Day  
+- Description:  
 ~~~
 Technical Analysis
 Enabling port security may:
@@ -224,6 +253,9 @@ conf t
 <br>
 <br>
 
+---
+&nbsp;
+
 
 ### STEP 5 - Create a Work Order for [Approval/Denial]
 CAB (Change Advisory Board) Members:
@@ -231,13 +263,17 @@ CAB (Change Advisory Board) Members:
 - IT Operations Lead
 - Security Officer
 
-<br>
 
-__Work Order [APPROVAL/DENIAL]__
-- Title:  CAB Review Approval/Denial
-- Workorder Type: Decision
-- Planned Time: +1 Day
-- Description:
+&nbsp;
+---
+&nbsp;
+
+
+__Work Order [APPROVAL/DENIAL]__  
+- Title:  CAB Review Approval/Denial  
+- Workorder Type: Decision  
+- Planned Time: +1 Day  
+- Description:  
 ~~~
 Approval Considerations
 - Minimal downtime
@@ -253,14 +289,17 @@ Decision:
 <br>
 <br>
 
+---
+&nbsp;
 
-### STEP 6 - Create a Work Order for [Implementation]
 
-__Work Order [IMPLEMENTATION]__
-Title: Implementation Procedure 
-- Workorder Type: Workorder
-- Planned Time: +1 Day
-- Description:
+### STEP 6 - Create a Work Order for [Implementation]  
+
+__Work Order [IMPLEMENTATION]__  
+Title: Implementation Procedure   
+- Workorder Type: Workorder  
+- Planned Time: +1 Day  
+- Description:  
 ~~~
 Pre-implementation Tasks:
 Backup Configs:
@@ -296,14 +335,17 @@ Post Implementation
 <br>
 <br>
 
+---
+&nbsp;
 
-### STEP 7 - Create a Work Order for Post Implementation Review PIR [Report]
 
-__Work Order [REPORT/REVIEW]__
-Title: PIR Incident Report
-- Workorder Type: PIR
-- Planned Time: +1 Day
-- Description:
+### STEP 7 - Create a Work Order for Post Implementation Review PIR [Report]  
+
+__Work Order [REPORT/REVIEW]__  
+Title: PIR Incident Report  
+- Workorder Type: PIR  
+- Planned Time: +1 Day  
+- Description:  
 ~~~
 Review Date: 3 days - 1 week after change
 
@@ -322,80 +364,118 @@ Lessons Learned
 - Need standard switch hardening template
 
 
-Idealy Performed with RCA (Root Cause Analysis)
-
+Ideally Performed with RCA (Root Cause Analysis)
 ~~~
 
 
 <br>
 <br>
 
+---
+&nbsp;
+
 
 ### STEP 8 - Create Conditions to allow Change States
+
 __A Review on the 5 ITSM Change Process__
 
+1. __REQUEST__
 
-1. REQUEST
-Expression: Workorder - REQUEST - STATE - IS - ACCEPTED
-Actions: Change - 00000xxxx - STATE - SET - PENDING APPROVAL
-
-<br>
-
-2. IMPACT ANALYSIS
-Expression: Workorder - IMPACT ANALYSIS - STATE - IS - ACCEPTED
-Actions: Change - 00000xxxx - STATE - SET - APPROVED
-
-<br>
-
-3. APPROVAL
-Expression: Workorder - APPROVAL - STATE - IS - ACCEPTED
-Actions: Change - 00000xxxx - STATE - SET - IN PROGRESS
-
-<br>
-
-4. IMPLEMENTATION
-Expression: Workorder - APPROVAL - STATE - IS - ACCEPTED
-Actions: Change - 00000xxxx - STATE - SET - PENDING PIR
-
-<br>
-
-5. REVIEW/REPORT
-Expression: Workorder - APPROVAL - STATE - IS - CLOSED
-Actions: Change - 00000xxxx - STATE - SET - SUCCESS
+| OBJECT    | SELECTOR | ATTRIBUTE | OPERATOR | VALUE            |
+| ---       | ---      | ---       | ---      | ---              |
+| WORKORDER | REQUEST  | STATE     | IS       | ACCEPTED         |
+|           |          |           |          |                  |
+| CHANGE    | 0000xxxx | STATE     | SET      | PENDING APPROVAL |
 
 
 <br>
+
+2. __IMPACT ANALYSIS__
+
+| OBJECT    | SELECTOR         | ATTRIBUTE | OPERATOR | VALUE            |
+| ---       | ---              | ---       | ---      | ---              |
+| WORKORDER | IMPACT ANALYSIS  | STATE     | IS       | ACCEPTED         |
+|           |                  |           |          |                  |
+| CHANGE    | 0000xxxx         | STATE     | SET      | APPROVED         |
+
+
 <br>
+
+3. __APPROVAL__
+
+| OBJECT    | SELECTOR         | ATTRIBUTE | OPERATOR | VALUE            |
+| ---       | ---              | ---       | ---      | ---              |
+| WORKORDER | APPROVAL         | STATE     | IS       | ACCEPTED         |
+|           |                  |           |          |                  |
+| CHANGE    | 0000xxxx         | STATE     | SET      | IN PROGRESS      |
+
+
+<br>
+
+4. __IMPLEMENTATION__
+
+| OBJECT    | SELECTOR         | ATTRIBUTE | OPERATOR | VALUE            |
+| ---       | ---              | ---       | ---      | ---              |
+| WORKORDER | IMPLEMENTATION   | STATE     | IS       | ACCEPTED         |
+|           |                  |           |          |                  |
+| CHANGE    | 0000xxxx         | STATE     | SET      | PENDING PIR      |
+
+
+<br>
+
+5. __REVIEW/REPORT__
+
+| OBJECT    | SELECTOR | ATTRIBUTE | OPERATOR | VALUE   |
+| ---       | ---      | ---       | ---      | ---     |
+| WORKORDER | REVIEW   | STATE     | IS       | CLOSED  |
+|           |          |           |          |         |
+| CHANGE    | 0000xxxx | STATE     | SET      | SUCCESS |
+
+
+<br>
+<br>
+
+---
+&nbsp;
+
 
 ### STEP 9 - Report on every single Work Order to Change states
 
-__Review__
+1. __REQUEST__
+- Formally propose a change to IT infrastructure, service, or configuration.  
 
-1. REQUEST
-- Formally propose a change to IT infrastructure, service, or configuration.
-This stage ensures:
-  The change is documented
-  The business need is clear
-  Initial scope is defined
+<br>
+
+This stage ensures:  
+  The change is documented  
+  The business need is clear  
+  Initial scope is defined  
+
+<br>
 
 Terms:
-  RFC (Request for Change) – Formal proposal
-  Change Record – The official tracking object
-  Change Initiator – Person submitting the RFC
-  Business Justification – Why this change is needed
-  Change Category – Infrastructure / Application / Network / Security
-  Priority – Based on Impact + Urgency
+  __RFC (Request for Change)__ – Formal proposal  
+  __Change Record__ – The official tracking object  
+  __Change Initiator__ – Person submitting the RFC  
+  __Business Justification__ – Why this change is needed  
+  __Change Category__ – Infrastructure / Application / Network / Security  
+  __Priority__ – Based on Impact + Urgency  
+
+<br>
 
 A complete, documented Change record ready for analysis.
 
 
-<br>
+&nbsp;
+---
+&nbsp;
 
 
-2. IMPACT ANALYSIS
+2. __IMPACT ANALYSIS__
 - Assess risk, impact, dependencies, and feasibility before approval.
 
-Key Activities:
+<br>
+
 - Identify affected services and users
 - Analyze technical dependencies
 - Evaluate risk level
@@ -403,89 +483,110 @@ Key Activities:
 - Define rollback plan
 - Assign risk score
 
+<br>
 
 Terms:  
-  Impact – Business/service effect if change fails
-  Risk – Likelihood × Impact
-  Risk Matrix – Used to score change
-  CI (Configuration Item) – Component in CMDB
-  Dependency Mapping – Relationship between systems
-  Rollback Plan – Recovery procedure
-  Mitigation Plan – Risk reduction actions
+  __Impact__ – Business/service effect if change fails
+  __Risk__ – Likelihood × Impact
+  __Risk Matrix__ – Used to score change
+  __CI (Configuration Item)__ – Component in CMDB
+  __Dependency Mapping__ – Relationship between systems
+  __Rollback Plan__ – Recovery procedure
+  __Mitigation Plan__ – Risk reduction actions
+
+<br>
 
 Framework:
   Risk Matrix
 
-<br>
+
+&nbsp;
+---
+&nbsp;
 
 
-3. APPROVAL/DENIAL
-- Ensure governance and business alignment before execution.
-
-Present change to CAB
-Review risk & impact analysis
-Approve, reject, or request modification
-Schedule implementation window
-
-Terms:
-  CAB (Change Advisory Board) – Group reviewing changes
-  ECAB – Emergency CAB
-  Change Manager – Process owner
-  Approval Workflow
-  Segregation of Duties
-  Compliance & Audit Trail
-
-
-Framework:
-  SOX / ISO 27001 control alignment
-  Authorization Matrix
-
+3. __APPROVAL/DENIAL__
+- Ensure governance and business alignment before execution.  
 
 <br>
+
+Present change to CAB  
+Review risk & impact analysis  
+Approve, reject, or request modification  
+Schedule implementation window  
+
+<br>
+
+Terms:  
+  __CAB (Change Advisory Board)__ – Group reviewing changes  
+  __ECAB__ – Emergency CAB  
+  __Change Manager__  
+  __Approval Workflow__  
+  __Segregation of Duties__  
+  __Compliance & Audit Trail__  
+
+<br>
+
+Framework:  
+  SOX / ISO 27001 control alignment  
+  Authorization Matrix  
+
+
+&nbsp;
+---
+&nbsp;
 
 
 4. IMPLEMENTATION
 - Execute the approved change in a controlled and documented manner.
 
-Follow implementation plan and Execute technical tasks.
+<br>
 
 Terms:
-  Change Window
-  Maintenance Window
-  Work Orders
-  Deployment Plan
-  Backout Plan
-  Release Management
-  Technical Validation
-
-
-Control Mechanisms
-  Real-time monitoring
-  Peer review
-  Go/No-Go decision checkpoint
-  Change freeze policies
-  
+  __Change Window__
+  __Maintenance Window__
+  __Work Orders__
+  __Deployment Plan__
+  __Backout Plan__
+  __Release Management__
+  __Technical Validation__
 
 <br>
 
+Control Mechanisms  
+  Real-time monitoring  
+  Peer review  
+  Go/No-Go decision checkpoint  
+  Change freeze policies  
+  
+
+&nbsp;
+---
+&nbsp;
+
   
 5. REVIEW/REPORT
+- Evaluate effectiveness and capture lessons learned.
 
-Evaluate effectiveness and capture lessons learned.
+<br>
 
-Conduct PIR meeting
-Compare expected vs outcome
-Identify Root Cause
-Update documentation
+Conduct PIR meeting  
+Compare expected vs outcome  
+Identify Root Cause  
+Update documentation  
 
-Terms:
-  PIR (Post Implementation Review)
-  RCA (Root Cause Analysis)
-  Lessons Learned
-  KPI Review
-  Change Success Rate
-  Continuous Improvement
-  
-Framework:
-PCDA (Plan-Do-Check-Act)
-CSI (Continual Service Improvement)
+<br>
+
+Terms:  
+  __PIR (Post Implementation Review)__  
+  __RCA (Root Cause Analysis)__   
+  __Lessons Learned__  
+  __KPI Review__  
+  __Change Success Rate__  
+  __Continuous Improvement__  
+
+<br>
+
+Framework:  
+  PCDA (Plan-Do-Check-Act)  
+  CSI (Continual Service Improvement)  
