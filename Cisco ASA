@@ -1,0 +1,284 @@
+!@coreTaas
+conf t
+ hostname coreTaas-72
+ enable secret pass
+ service password-encryption
+ no logging console
+ no ip domain-lookup
+ line cons 0
+  password pass
+  login
+  exec-timeout 0 0
+ line vty 0 14
+  password pass
+  login
+  exec-timeout 0 0
+ int vlan 1
+  no shut
+  ip add 10.72.1.2 255.255.255.0
+  desc DEFAULT-VLAN
+ int vlan 10
+  no shut
+  ip add 10.72.10.2 255.255.255.0
+  desc WIFI-VLAN
+ int vlan 50
+  no shut
+  ip add 10.72.50.2 255.255.255.0
+  desc CCTV-VLAN
+ int vlan 100
+  no shut
+  ip add 10.72.100.2 255.255.255.0
+  desc VOICE-VLAN
+ end
+
+!@CoreTAAS
+conf t
+ vlan 69
+  name FW
+  exit
+ int vlan 69
+  ip add 10.72.69.2 255.255.255.0
+  no shut
+  exit
+ int range fa0/1,fa0/3
+  switchport mode access
+  switchport access vlan 69
+  exit
+ !
+ ip routing
+ router ospf 1
+  router-id 10.72.1.2
+  network 10.72.1.0  0.0.0.255 area 0
+  network 10.72.10.0 0.0.0.255 area 0
+  network 10.72.69.0 0.0.0.255 area 0
+  network 10.72.50.0 0.0.0.255 area 0
+  network 10.72.100.0 0.0.0.255 area 0
+  end
+
+
+
+
+*************
+
+!@coreBaba
+conf t
+ hostname coreBaba-72
+ enable secret pass
+ service password-encryption
+ no logging console
+ no ip domain-lookup
+ line cons 0
+  password pass
+  login
+  exec-timeout 0 0
+ line vty 0 14
+  password pass
+  login
+  exec-timeout 0 0
+ int vlan 1
+  no shut
+  ip add 10.72.1.4 255.255.255.0
+  desc DEFAULT-VLAN
+ int vlan 10
+  no shut
+  ip add 10.72.10.4 255.255.255.0
+  desc WIFI-VLAN
+ int vlan 50
+  no shut
+  ip add 10.72.50.4 255.255.255.0
+  desc CCTV-VLAN
+ int vlan 100
+  no shut
+  ip add 10.72.100.4 255.255.255.0
+  desc VOICE-VLAN
+ end
+
+!@dhcp
+conf t
+ ip dhcp excluded-add 10.72.1.1 10.72.1.100
+ ip dhcp excluded-add 10.72.10.1 10.72.10.100
+ ip dhcp excluded-add 10.72.50.1 10.72.50.100
+ ip dhcp excluded-add 10.72.100.1 10.72.100.100
+
+ ip dhcp pool POOLDATA
+  network 10.72.1.0 255.255.255.0
+  default-router 10.72.1.4
+  domain-name MGMTDATA.COM
+  dns-server 10.72.1.10
+ ip dhcp pool POOLWIFI
+  network 10.72.10.0 255.255.255.0
+  default-router 10.72.10.4
+  domain-name WIFIDATA.COM
+  dns-server 10.72.1.10
+  option 43 ip 10.72.10.72
+ ip dhcp pool POOLCCTV
+  network 10.72.50.0 255.255.255.0
+  default-router 10.72.50.4
+  domain-name CCTVDATA.COM
+  dns-server 10.72.1.10
+ ip dhcp pool POOLVOICE
+  network 10.72.100.0 255.255.255.0
+  default-router 10.72.100.4
+  domain-name VOICEDATA.COM
+  dns-server 10.72.1.10
+  option 150 ip 10.72.100.8
+ end
+ 
+
+!@switchport
+conf t
+ vlan 10
+  name WIFIVLAN
+ vlan 50
+  name CCTVVLAN
+ vlan 100
+  name VOICEVLAN
+ int fa 0/2
+  switchport mode access
+  switchport access vlan 10
+ int fa 0/4
+  switchport mode access
+  switchport access vlan 10
+ int fa 0/6
+  switchport mode access
+  switchport access vlan 50
+ int fa 0/8
+  switchport mode access
+  switchport access vlan 50
+ int fa 0/3
+  switchport mode access
+  switchport access vlan 100
+ int fa 0/5
+  switchport mode access
+  switchport voice vlan 100
+  switchport access vlan 1
+  mls qos trust device cisco-phone
+ int fa 0/7
+  switchport mode access
+  switchport voice vlan 100
+  switchport access vlan 1
+  mls qos trust device cisco-phone
+ end
+ 
+
+!@CoreBABA
+conf t
+ ip dhcp excluded-address 10.72.69.1   10.72.69.100
+ ip dhcp pool FWPOOL
+  network 10.72.69.0 255.255.255.0
+  default-router 10.72.69.2
+  domain-name FW.COM
+  dns-server 10.72.1.10
+ !
+ ip routing
+ router ospf 1
+  router-id 10.72.1.4
+  network 10.72.1.0  0.0.0.255 area 0
+  network 10.72.10.0 0.0.0.255 area 0
+  network 10.72.50.0 0.0.0.255 area 0
+  network 10.72.100.0 0.0.0.255 area 0
+  end
+
+
+!@coreBaba, coreTaas
+conf t
+ int range fa0/10-12
+  switchport trunk encapsulation dot1q
+  switchport mode trunk
+  channel-group 1 mode active
+  channel-protocol lacp
+  end
+  
+
+
+
+**********************
+
+!@CiscoASA-69
+conf t
+ hostname CiscoFW-72
+ enable password pass
+ int g1/1
+  nameif FW-TO-EDGE
+  security-level 100
+  no shut
+  ip add 10.72.72.12 255.255.255.0
+  exit
+ int g1/2
+  nameif INSIDE
+  security-level 100
+  no shut
+  ip add 10.72.69.12 255.255.255.0
+  exit
+ int man1/1
+  management-only
+  no nameif
+  no security-level
+  no ip address
+  no shutdown
+  exit
+ !
+ no router ospf 1
+ router ospf 1
+  router-id 10.72.72.12
+  network 10.72.72.0 255.255.255.0 area 0
+  network 10.72.69.0 255.255.255.0 area 0
+  end
+  
+
+
+!@CiscoASA-72
+conf t
+ username admin password pass privi 15
+ http server enable
+ http 10.72.1.0 255.255.255.0 INSIDE
+ end
+
+
+!@CiscoASA-72
+dir disk0:
+
+
+!@CiscoASA-72
+conf t
+asdm image disk0:/asdm-782.bin
+end
+
+
+
+
+********** 
+SSH
+
+!@CiscoASA-72
+conf t
+ username admin password pass privi 15
+ aaa authentication ssh console LOCAL
+ ssh 10.72.1.10 255.255.255.255 INSIDE  
+ crypto key generate rsa modulus 2048
+ ssh version 2
+ end
+
+
+
+
+
+
+
+
+
+
+
+********
+Firepower
+
+Setup Wizard from ASDM Application GUI
+IP: 10.72.1.24/24
+Gateway: 10.72.1.4
+
+
+ASA - CERTIFICATE
+On ASDM
+Go to Wizard > ASDM Identity Cert Wizard
+Then Java Control Panel and import it 
+then restart ASDM
