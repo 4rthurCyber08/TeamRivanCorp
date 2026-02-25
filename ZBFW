@@ -1,0 +1,201 @@
+
+~~~
+!@VPN-PH
+conf t
+ hostname VPN-PH
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ line vty 0 14
+  transport input all
+  password pass
+  login local
+  exec-timeout 0 0
+ int g1
+  ip add 208.8.8.11 255.255.255.0
+  no shut
+ int g2
+  ip add 192.168.102.11 255.255.255.0
+  no shut
+ int g3
+  ip add 11.11.11.113 255.255.255.224
+  no shut
+ !
+ ip route 0.0.0.0 0.0.0.0 208.8.8.2
+ ip domain lookup
+ ip name-server 8.8.8.8 1.1.1.1
+ !
+ username admin privilege 15 secret pass
+ ip http server
+ ip http secure-server
+ ip http authentication local
+ end
+wr
+!
+~~~
+
+
+
+***************
+
+ACL
+
+- Block ICMP, SSH, TELNET
+> Return traffic should be allowed
+
+
+# ZBFW - Zone-Based Firewall, Policy-Based, Inter-Zone Security, Stateful Firewall
+
+!@UTM-PH
+conf t
+ zone security INSIDE
+ zone security OUTSIDE
+ zone security MGMT
+ !
+ int g1
+  description WAN
+  ip add 208.8.8.11 255.255.255.0
+  zone-member security OUTSIDE
+  no shut
+  exit
+ int g2
+  description MGMT
+  ip add 192.168.102.11 255.255.255.0
+  zone-member security MGMT
+  no shut
+  exit
+ int g3
+  description LAN
+  ip add 192.168.103.11 255.255.255.0
+  zone-member security INSIDE
+  no shut
+  end
+
+
+!@UTM-PH
+conf t
+ class-map type inspect match-any LAN-ALLOWED
+  match protocol http
+  match protocol https
+  match protocol dns
+  match protocol ntp
+  match protocol icmp
+  match protocol tcp
+  match protocol udp
+  exit
+ class-map type inspect match-any MGMT-TRAFFIC
+  match protocol ssh
+  match protocol https
+  match protocol http
+  match protocol telnet
+  exit
+ !
+ policy-map type inspect LAN-TO-INET
+  class type inspect LAN-ALLOWED
+   inspect
+  class class-default
+   drop log
+   exit
+  exit
+ !
+ policy-map type inspect INET-TO-LAN
+  class class-default
+   drop log
+   exit
+  exit
+ !
+ policy-map type inspect MGMT-POLICY
+  class type inspect MGMT-TRAFFIC
+   inspect
+  class class-default
+   drop log
+   exit
+  exit
+ end
+
+
+!@UTM-PH
+conf t
+ zone-pair security ZP-LAN-INET source INSIDE dest OUTSIDE
+  service-policy type inspect LAN-TO-INET
+  exit
+ !
+ zone-pair security ZP-INET-LAN source OUTSIDE dest INSIDE
+  service-policy type inspect INET-TO-LAN
+  exit
+ !
+ zone-pair security ZP-MGMT-SELF source MGMT dest self
+  service-policy type inspect MGMT-POLICY
+  end
+  
+
+
+ALLOW SSH FROM OUTSIDE
+
+!@UTM-PH
+conf t
+ object-group network SSH-JP_dst_net 
+  host 11.11.11.100
+  exit
+ !
+ object-group network SSH-JP_src_net 
+  host 208.8.8.12
+  exit
+ !
+ object-group service SSH-JP_svc 
+  tcp eq 22
+  exit
+ !
+ ip access-list extended SSH-JP_acl
+  10 permit object-group SSH-JP_svc object-group SSH-JP_src_net object-group SSH-JP_dst_net
+  exit
+ !
+ class-map type inspect match-all SSH-JP
+  match access-group name SSH-JP_acl
+  exit
+ !
+ policy-map type inspect INET-TO-LAN
+  class type inspect SSH-JP
+   inspect
+  class class-default
+   drop log
+   end
+***************
+
+
+
+!@UTM-PH
+conf t
+ object-group network SSH-JP_dst_net 
+  host 11.11.11.100
+  exit
+ !
+ object-group network SSH-JP_src_net 
+  host 208.8.8.12
+  exit
+ !
+ object-group service SSH-JP_svc 
+  tcp eq 22
+  exit
+ !
+ ip access-list extended SSH-JP_acl
+  10 permit tcp host 208.8.8.12 host 11.11.11.100 eq 22
+  exit
+ !
+ class-map type inspect match-all SSH-JP
+  match access-group name SSH-JP_acl
+  ma
+  exit
+ !
+ policy-map type inspect INET-TO-LAN
+  class type inspect SSH-JP
+   inspect
+  class class-default
+   drop log
+   exit
+  exit
+ !
+ zone-pair security ZP-INET-LAN source OUTSIDE dest INSIDE
+  service-policy type inspect INET-TO-LAN
+  exit
