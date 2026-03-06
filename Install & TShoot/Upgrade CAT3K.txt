@@ -1,0 +1,43 @@
+@Switch
+conf t
+ hostname Upgrade-Switch-2
+ enable secret pass
+ line cons 0
+  password pass
+  no login
+  exec-timeout 0 0
+ line vty 0 14
+  transport input all
+  password pass
+  no login
+  exec-timeout 0 0
+ !
+ int vlan 1
+  ip add 10.21.1.4 255.255.255.0
+  no shut
+  end
+
+
+conf t
+ hostname Upgrade-Switch-1
+ enable secret pass
+ line cons 0
+  password pass
+  no login
+  exec-timeout 0 0
+ line vty 0 14
+  transport input all
+  password pass
+  no login
+  exec-timeout 0 0
+ !
+ int vlan 1
+  ip add 10.21.1.2 255.255.255.0
+  no shut
+  end
+
+
+
+
+copy tftp:cat3k_caa-universalk9.16.12.14.SPA.bin flash:
+software install file flash:cat3k_caa-universalk9.16.12.14.SPA.bin new force
