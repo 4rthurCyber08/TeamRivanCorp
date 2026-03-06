@@ -40,4 +40,5 @@ conf t
 
 
 copy tftp:cat3k_caa-universalk9.16.12.14.SPA.bin flash:
+install add file flash:cat3k_caa-universalk9.16.12.14.SPA.bin activate commit
 software install file flash:cat3k_caa-universalk9.16.12.14.SPA.bin new force
