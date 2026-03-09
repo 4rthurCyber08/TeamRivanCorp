@@ -324,3 +324,141 @@ conf t
   session target ipv4:10.92.92.1
   codec g711ULAW
  end
+
+
+
+*************************
+
+!@EDGE - Session Initiation Protocol
+
+!@CME
+!@EDGE
+conf t
+ voice service voip
+  allow-connections sip to sip
+  allow-connections h323 to sip
+  allow-connections sip to h323
+  supplementary-service h450.12
+  !
+  ip address trusted list
+   ipv4 0.0.0.0  0.0.0.0                                
+   exit
+  sip
+   silent-discard untrusted
+   header-passing
+   registrar server expires max 600 min 60
+   bind control source-interface g0/0/0
+   bind media source-interface g0/0/0
+   exit
+  exit
+ !
+ voice register global
+  mode cme
+  source-address 10.#$34T#.#$34T#.1  port 5060
+  max-dn 20
+  max-pool 20
+  no auto-register
+  authenticate register
+  create profile
+  exit
+ !
+ voice register dn 1
+  number #$34T#11
+  name #$34T#11
+  allow watch
+  exit
+ voice register dn 2
+  number #$34T#22
+  name #$34T#22
+  allow watch 
+  exit
+ voice register dn 3
+  number #$34T#33
+  name #$34T#33
+  allow watch
+  exit
+ voice register dn 4
+  number #$34T#44
+  name #$34T#44
+  allow watch 
+  exit
+ voice register dn 5
+  number #$34T#55
+  name #$34T#55
+  allow watch
+  exit
+ voice register dn 6
+  number #$34T#66
+  name #$34T#66
+  allow watch 
+  exit
+ voice register dn 7
+  number #$34T#77
+  name #$34T#77
+  allow watch
+  exit
+ voice register dn 8
+  number #$34T#88
+  name #$34T#88
+  allow watch 
+  exit
+ voice register dn 9
+  number #$34T#99
+  name #$34T#99
+  allow watch
+  exit
+ voice register dn 10
+  number #$34T#00
+  name #$34T#00
+  allow watch
+  exit
+ !
+ voice register pool 1
+  id mac ___.___.___
+  type 8851
+  number 1 dn 1
+  number 2 dn 2
+  number 3 dn 3
+  number 4 dn 4
+  number 5 dn 5
+  username #$34T#Passa password #$34T#Passa
+  dtmf-relay rtp-nte
+  codec g711ulaw
+  exit
+ voice register pool 2
+  id mac ___.___.___
+  type 8851
+  number 1 dn 6
+  number 2 dn 7
+  number 3 dn 8
+  number 4 dn 9
+  number 5 dn 10
+  username #$34T#Passb password #$34T#Passb
+  dtmf-relay rtp-nte
+  codec g711ulaw
+  exit
+ !
+ voice register global
+  create profile sync syncinfo.xml
+  exit
+ !
+ dial-peer voice 11 voip
+  destination-pattern 11..
+  session protocol sipv2
+  session target ipv4:10.11.11.1
+  codec g711ulaw
+  dtmf-relay rtp-nte
+  no vad
+  exit
+ dial-peer voice 12 voip
+  destination-pattern 12..
+  session protocol sipv2
+  session target ipv4:10.12.12.1
+  codec g711ulaw
+  dtmf-relay rtp-nte
+  no vad
+  exit
+ 
+
+
+
