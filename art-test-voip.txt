@@ -1,0 +1,565 @@
+
+
+!@CoreBABA
+conf t
+ hostname CoreBABA-11
+ enable secret pass
+ service password-encr
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  password pass
+  login
+  exec-timeout 0 0
+ line vty 0 14
+  password pass
+  login
+  exec-timeout 0 0
+  exit
+ vlan 100
+  name VOICEVLAN
+  exit
+ int vlan 100
+  ip add 10.11.100.4 255.255.255.0
+  no shut
+  exit
+ int range fa0/5,fa0/7
+  switchport mode access
+  switchport access vlan 1
+  switchport voice vlan 100
+  mls qos trust device cisco-phone
+  exit
+ int g0/1
+  no switchport
+  ip add 10.11.11.4 255.255.255.0
+  no shut
+  exit
+ !
+ ip dhcp excluded-address 10.11.100.1 10.11.100.100
+ ip dhcp pool VOICEPOOL
+  network 10.11.100.0 255.255.255.0
+  default-router 10.11.100.4
+  dns-server 10.11.1.10
+  domain-name VOICE.COM
+  option 150 ip 10.11.11.1
+  option 120 ip 10.11.11.1
+  exit
+ !
+ ip routing
+ end
+
+
+!@EDGE
+conf t
+ hostname EDGE-11
+ enable secret pass
+ service password-encr
+ no logging cons
+ no ip domain lookup
+ line cons 0
+  password pass
+  login
+  exec-timeout 0 0
+ line vty 0 14
+  password pass
+  login
+  exec-timeout 0 0
+  exit
+ int g0/0/0
+  ip add 10.11.11.1 255.255.255.0
+  no shut
+  exit
+ int g0/0/1
+  ip add 200.0.0.11 255.255.255.0
+  no shut
+  exit
+ int lo1
+  ip add 11.0.0.1 255.255.255.255
+  exit
+ ip route 10.11.0.0 255.255.0.0 10.11.11.4
+ end
+
+
+
+
+!@CME
+conf t
+ voice register global
+  mode cme
+  exit
+ !
+ voice service voip
+  allow-connections sip to sip
+  allow-connections h323 to sip
+  allow-connections sip to h323
+   supplementary-service h450.12
+  !
+  ip address trusted list
+   ipv4 0.0.0.0  0.0.0.0
+   exit
+  sip
+   silent-discard untrusted
+   header-passing
+   registrar server expires max 120 min 60
+   bind control source-interface Gi0/0/0
+   bind media source-interface Gi0/0/0
+   exit
+  exit
+ voice register global
+  source-address 10.11.11.1 port 5060
+  max-dn 20
+  max-pool 12
+  authenticate register
+  create profile sync syncinfo.xml
+  exit
+ voice register dn 1
+  number 1111
+  name 1111
+  allow watch
+ voice register dn 2
+  number 1122
+  name 1122
+  allow watch
+ voice register dn 3
+  number 1133
+  name 1133
+  allow watch
+ voice register dn 4
+  number 1144
+  name 1144
+  allow watch
+ voice register dn 5
+  number 1155
+  name 1155
+  allow watch
+ voice register dn 6
+  number 1166
+  name 1166
+  allow watch
+ voice register dn 7
+  number 1177
+  name 1177
+  allow watch
+ voice register dn 8
+  number 1188
+  name 1188
+  allow watch
+ voice register dn 9
+  number 1199
+  name 1199
+  allow watch
+ voice register dn 10
+  number 1167
+  name 1167
+  allow watch
+  exit
+ !
+ voice register pool 1
+  type 8851
+  id mac c4c6.03f0.19b6
+  number 1 dn 1
+  number 2 dn 2
+  number 3 dn 3
+  number 4 dn 4
+  number 5 dn 5
+  dtmf-relay sip-notify
+  username 11Passa password 11Passa
+  codec g711ulaw
+ voice register pool 2
+  type 8851
+  id mac dcf7.19d9.d39e
+  number 1 dn 6
+  number 2 dn 8
+  number 3 dn 9
+  number 4 dn 7
+  number 5 dn 10
+  dtmf-relay sip-notify
+  username 11Passb password 11Passb
+  codec g711ulaw
+  end
+
+
+!@Force
+conf t
+ voice register global
+  create profile sync syncinfo.xml
+  restart
+end
+
+
+*****
+NTP
+!@EDGE
+conf t
+ ntp master 1
+ voice register global 
+  ntp-server 10.11.11.1
+  apply-config 
+
+
+
+11~
+!@CME
+conf t
+ voice service voip
+  allow-connections sip to sip                      ! Required to allow outgoing calls for SIP Traffic
+  allow-connections h323 to sip
+  allow-connections sip to h323
+  !
+  ip address trusted list
+   ipv4 0.0.0.0  0.0.0.0                            ! Allow SIP traffic from this subnet
+   ipv6 ::/0                                        
+   exit
+  sip
+   silent-discard untrusted                         ! prevent SIP Scan
+   header-passing                                   ! unchange SIP header info
+   registrar server expires max 600 min 60        ! SIP Registrar - max registration time until register again
+   bind control source-interface Gi3  ipv6-add      ! SIP Signaling interface
+   bind media source-interface Gi3    ipv6-add      ! RTP Voice Streams interface
+   exit
+  exit
+ !
+ voice register global                              ! Enter SIP phone global config mode
+  mode cme                                          ! Enable Cisco CME Mode
+  source-address __.__.__.__  port 5060             ! SIP Address of CME
+  max-dn 12                                         ! Max DN
+  max-pool 12                                       ! Max SIP Phones
+  authenticate register                             ! Phones must authenticate before registering
+  ! no authenticate register                        ! Will not ask for authentication                        
+  create profile                                    ! EQ to Create CNF-Files
+  exit
+ !
+ voice register dn 1                                ! ---Configure DNs---
+  number ____                                       ! DNumber
+  name ____                                         ! Caller ID Name
+  allow watch                                       ! monitor BLF
+  exit
+ voice register dn 2
+  number ____
+  name ____
+  allow watch 
+  exit
+ !
+ voice register pool 1                              ! ---Configure ePhones---
+  id mac ___.___.___                                ! Phone MAC
+  type ____                                         ! Phone Model
+  number 1 dn 1                                     ! Button 1 > DN 1
+  username ___ password ___                         ! Authentication Info
+  dtmf-relay sip-notify !rtp-nte                    ! Defines how keypad tones are transmitted
+  codec g711ulaw                                    ! Voice Codec (64 kbps, highest voice qualit)
+  exit
+ !
+ voice register global
+  create profile sync syncinfo.xml                  ! Update SIP phones about cnf file
+  exit
+ !
+ dial-peer voice 1 voip
+  destination-pattern 00..                          ! 00.. = Matches dialed numbers beginning with 00
+  ! session protocol sipv2                          ! Set Protocol
+  session target ipv4                               ! Target IP for voice
+  codec g711ulaw
+  dtmf-relay rtp-nte                                
+  no vad                                            ! Disable Voice Activity Detection for DTMF Reliability 
+  incoming called-number ___                        ! If the call comes from ___ route it based on this dial-peer
+11~
+
+
+Show Commands
+1. show voice register global
+2. show voice register pool
+3. show sip-ua register status
+4. show voice call summary
+
+
+
+SIP Flow operation
+1. Phone obtains IP from DHCP
+2. Phone discovers TFTP server
+3. Phone downloads XML config
+4. Phone sends SIP REGISTER to router
+5. Router authenticates phone
+6. Phone becomes available for calls
+
+
+
+
+
+**************
+IVRS
+
+
+!@CME
+conf t
+ application
+  service IVRS flash:app-b-acd-aa-3.0.0.2.tcl
+   param handoff-string IVRS
+   !
+   param welcome-prompt flash:en_bacd_welcome.au
+   paramspace english index 1
+   paramspace english location flash:
+   paramspace english language en
+   !
+   param aa-pilot ____
+   param number-of-hunt-grps 2
+   param voice-mail 1234
+   param call-retry-timer 15
+   param max-time-vm-retry 2
+   param second-greeting-time 60
+   param max-time-call-retry 700
+   param dial-by-extension-option 8
+   !
+   param service-name IVRSQUEUE
+   exit
+  service IVRSQUEUE flash:app-b-acd-3.0.0.2.tcl
+   param number-of-hunt-grps 4
+   param queue-len 15
+   !
+   param aa-hunt1 ____
+   param aa-hunt2 ____
+   param aa-hunt3 ____
+   param aa-hunt4 ____
+   !
+   param queue-manager-debugs 1
+   param queue-cme-debugs 1
+   exit
+  exit
+ !
+ dial-peer voice 69 voip
+  service IVRS
+  destination-patter ____
+  session-target ipv4:__.__.__.__
+  incoming called-number ____
+  dtmf-relay rtp-nte
+  codec g711ulaw
+  no vad
+
+
+
+
+
+
+!Register Phones Create
+conf t
+voice register global
+create profile sync syncinfo.xml
+restart
+end
+
+
+!@incoming and outgoing
+conf t
+ voice service voip
+ ip address trusted list
+ ipv4 0.0.0.0 0.0.0.0
+ end
+
+!Dial-Peer Don't Touch yourself
+conf t
+ dial-peer voice 11 Voip
+  destination-pattern 11..
+  session target ipv4:10.11.11.1
+  codec g711ULAW
+ dial-peer voice 12 Voip
+  destination-pattern 12..
+  session target ipv4:10.12.12.1
+  codec g711ULAW
+ dial-peer voice 21 Voip
+  destination-pattern 21..
+  session target ipv4:10.21.21.1
+  codec g711ULAW
+ dial-peer voice 22 Voip
+  destination-pattern 22..
+  session target ipv4:10.22.22.1
+  codec g711ULAW
+ dial-peer voice 31 Voip
+  destination-pattern 31..
+  session target ipv4:10.31.31.1
+  codec g711ULAW
+ dial-peer voice 32 Voip
+  destination-pattern 32..
+  session target ipv4:10.32.32.1
+  codec g711ULAW
+ dial-peer voice 41 Voip
+  destination-pattern 41..
+  session target ipv4:10.41.41.1
+  codec g711ULAW
+ dial-peer voice 42 Voip
+  destination-pattern 42..
+  session target ipv4:10.42.42.1
+  codec g711ULAW
+ dial-peer voice 51 Voip
+  destination-pattern 51..
+  session target ipv4:10.51.51.1
+  codec g711ULAW
+ dial-peer voice 52 Voip
+  destination-pattern 52..
+  session target ipv4:10.52.52.1
+  codec g711ULAW
+ dial-peer voice 61 Voip
+  destination-pattern 61..
+  session target ipv4:10.61.61.1
+  codec g711ULAW
+ dial-peer voice 62 Voip
+  destination-pattern 62..
+  session target ipv4:10.62.62.1
+  codec g711ULAW
+ dial-peer voice 71 Voip
+  destination-pattern 71..
+  session target ipv4:10.71.71.1
+  codec g711ULAW
+ dial-peer voice 72 Voip
+  destination-pattern 72..
+  session target ipv4:10.72.72.1
+  codec g711ULAW
+ dial-peer voice 81 Voip
+  destination-pattern 81..
+  session target ipv4:10.81.81.1
+  codec g711ULAW
+ dial-peer voice 82 Voip
+  destination-pattern 82..
+  session target ipv4:10.82.82.1
+  codec g711ULAW
+ dial-peer voice 91 Voip
+  destination-pattern 91..
+  session target ipv4:10.91.91.1
+  codec g711ULAW
+ dial-peer voice 92 Voip
+  destination-pattern 92..
+  session target ipv4:10.92.92.1
+  codec g711ULAW
+ end
+
+
+
+*************************
+
+!@EDGE - Session Initiation Protocol
+
+!@CME
+!@EDGE
+conf t
+ voice service voip
+  allow-connections sip to sip
+  allow-connections h323 to sip
+  allow-connections sip to h323
+  supplementary-service h450.12
+  !
+  ip address trusted list
+   ipv4 0.0.0.0  0.0.0.0                                
+   exit
+  sip
+   silent-discard untrusted
+   header-passing
+   registrar server expires max 600 min 60
+   bind control source-interface g0/0/0
+   bind media source-interface g0/0/0
+   exit
+  exit
+ !
+ voice register global
+  mode cme
+  source-address 10.#$34T#.#$34T#.1  port 5060
+  max-dn 20
+  max-pool 20
+  no auto-register
+  authenticate register
+  create profile
+  exit
+ !
+ voice register dn 1
+  number #$34T#11
+  name #$34T#11
+  allow watch
+  exit
+ voice register dn 2
+  number #$34T#22
+  name #$34T#22
+  allow watch 
+  exit
+ voice register dn 3
+  number #$34T#33
+  name #$34T#33
+  allow watch
+  exit
+ voice register dn 4
+  number #$34T#44
+  name #$34T#44
+  allow watch 
+  exit
+ voice register dn 5
+  number #$34T#55
+  name #$34T#55
+  allow watch
+  exit
+ voice register dn 6
+  number #$34T#66
+  name #$34T#66
+  allow watch 
+  exit
+ voice register dn 7
+  number #$34T#77
+  name #$34T#77
+  allow watch
+  exit
+ voice register dn 8
+  number #$34T#88
+  name #$34T#88
+  allow watch 
+  exit
+ voice register dn 9
+  number #$34T#99
+  name #$34T#99
+  allow watch
+  exit
+ voice register dn 10
+  number #$34T#00
+  name #$34T#00
+  allow watch
+  exit
+ !
+ voice register pool 1
+  id mac ___.___.___
+  type 8851
+  number 1 dn 1
+  number 2 dn 2
+  number 3 dn 3
+  number 4 dn 4
+  number 5 dn 5
+  username #$34T#Passa password #$34T#Passa
+  dtmf-relay rtp-nte
+  codec g711ulaw
+  exit
+ voice register pool 2
+  id mac ___.___.___
+  type 8851
+  number 1 dn 6
+  number 2 dn 7
+  number 3 dn 8
+  number 4 dn 9
+  number 5 dn 10
+  username #$34T#Passb password #$34T#Passb
+  dtmf-relay rtp-nte
+  codec g711ulaw
+  exit
+ !
+ voice register global
+  create profile sync syncinfo.xml
+  exit
+ !
+ dial-peer voice 11 voip
+  destination-pattern 11..
+  session protocol sipv2
+  session target ipv4:10.11.11.1
+  codec g711ulaw
+  dtmf-relay rtp-nte
+  no vad
+  exit
+ dial-peer voice 12 voip
+  destination-pattern 12..
+  session protocol sipv2
+  session target ipv4:10.12.12.1
+  codec g711ulaw
+  dtmf-relay rtp-nte
+  no vad
+  exit
+ 
