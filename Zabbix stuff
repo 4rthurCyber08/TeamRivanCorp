@@ -1,0 +1,45 @@
+!@Cisco CSR
+conf t
+ access-list 1 permit __.__.__.__   ! zabbix IP
+ !
+ snmp-server community C1sc0123 ro 1   ! C1sc0123 Community Password
+ !
+ snmp-server source-int informs g1
+ snmp-server source-int traps g1
+ end
+ 
+
+
+## Zabbix
+Linux:
+- User: root
+  Pass: zabbix
+
+WebUI:
+- User: Admin
+  Pass: zabbix
+
+<br>
+
+1. Create Host Group
+
+`Data Collection` > `Host Group`
+
+
+2. Add Host
+
+`Data Collection` > `Hosts`
+
+Host Name: UTM-PH
+Templates: Cisco IOS by SNMP
+Host Groups: Network Devices
+Interface:
+  - SNMP: __.__.__.__   !Cisco IP
+
+
+
+
+Restart zabbix-server
+
+!@Zabbix
+systemctl restart zabbix-server
