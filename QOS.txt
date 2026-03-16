@@ -1,0 +1,151 @@
+# Quality of Service
+
+~~~
+!@UTM-PH
+conf t
+ hostname UTM-PH
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ line vty 0 14
+  transport input all
+  password pass
+  login local
+  exec-timeout 0 0
+ int g1
+  ip add 208.8.8.11 255.255.255.0
+  no shut
+ int g2
+  ip add 192.168.102.11 255.255.255.0
+  no shut
+ int g3
+  ip add 11.11.11.113 255.255.255.224
+  no shut
+ !
+ username admin privilege 15 secret pass
+ ip http server
+ ip http secure-server
+ ip http authentication local
+ ip route 0.0.0.0 0.0.0.0 208.8.8.2
+ end
+wr
+!
+~~~
+
+<br>
+
+~~~
+!@BLDG-1
+sudo su
+ifconfig eth0 11.11.11.101 netmask 255.255.255.224 up
+route add default gw 11.11.11.113
+ping 11.11.11.113
+
+~~~
+
+<br>
+
+~~~
+!@BLDG-2
+sudo su
+ifconfig eth0 11.11.11.102 netmask 255.255.255.224 up
+route add default gw 11.11.11.113
+ping 11.11.11.113
+
+~~~
+
+<br>
+
+~~~
+!@BLDG-3
+sudo su
+ifconfig eth0 11.11.11.103 netmask 255.255.255.224 up
+route add default gw 11.11.11.113
+ping 11.11.11.113
+
+~~~
+
+<br>
+<br>
+
+### Set DNS Server
+
+~~~
+!@Linux
+vi /etc/resolv.conf
+
+nameserver 8.8.8.8
+~~~
+
+
+
+### Marking
+BLDG-1  >  www.dlsu.edu.ph    | EF
+BLDG-1  >  www.redtube.com    | CS6
+BLDG-1  >  www.pinayflix.com  | AF11
+
+
+!@CSR
+conf t
+ ip access-list extended EDU
+  permit ip host 11.11.11.101 host 172.66.161.211 
+  exit
+ ip access-list extended PRON
+  permit ip host 11.11.11.101 host 66.254.114.238
+  exit
+ ip access-list extended GOODPRON
+  permit ip host 11.11.11.101 host 104.21.55.88
+  exit
+ !
+ class-map match-any SCHOOLS
+  match access-group name EDU
+  exit
+ class-map match-any PWEDE
+  match access-group name GOODPRON
+  exit
+ class-map match-any BAWAL
+  match access-group name PRON
+  exit
+ !
+ policy-map MARKINGS
+  class SCHOOLS
+   set dscp EF
+   exit
+  class PWEDE
+   set dscp AF11
+   exit
+  class BAWAL
+   set dscp CS1
+   exit
+  class class-default
+   set dscp default
+   exit
+  exit
+ !
+ int g1
+  service-policy output MARKINGS
+  end
+
+
+icmp.type == 8
+
+
+
+### QUEUEING & RANDOM EARLY DETECTION
+
+!@CSR
+conf t
+ policy-map MARKINGS
+  class SCHOOLS
+   priority 200000   ! Low Latency Queueing
+   exit
+  class PWEDE
+   bandwidth 1000    ! RED THRESHOLD
+   random-detect dscp-based ! WRED
+   random-detect ecn ! WRED
+   random-detect dscp af13 1000 bytes  2000 bytes ! WRED
+   end
+
+
+### SHAPING & POLICING
