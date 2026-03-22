@@ -1,0 +1,366 @@
+
+~~~
+!@UTM-PH
+conf t
+ hostname UTM-PH
+ enable secret pass
+ service password-encryption
+ no logging cons
+ ip domain lookup
+ line vty 0 14
+  transport input all
+  password pass
+  login local
+  exec-timeout 0 0
+ int g1
+  ip add 208.8.8.11 255.255.255.0
+  no shut
+ int g2
+  ip add 192.168.102.11 255.255.255.0
+  no shut
+ int g3
+  ip add 11.11.11.113 255.255.255.224
+  no shut
+ !
+ ip route 0.0.0.0 0.0.0.0 208.8.8.2
+ ip name-server 8.8.8.8
+ !
+ username admin privilege 15 secret pass
+ service finger
+ service tcp-small-servers
+ service udp-small-servers
+ ip dns server
+ ip http server
+ ip http secure-server
+ ip http authentication local
+ end
+wr
+!
+~~~
+
+~~~
+!@BLDG-1
+sudo su
+ifconfig eth0 11.11.11.101 netmask 255.255.255.224 up
+route add default gw 11.11.11.113
+ping 11.11.11.113
+
+~~~
+
+~~~
+!@BLDG-2
+sudo su
+ifconfig eth0 11.11.11.102 netmask 255.255.255.224 up
+route add default gw 11.11.11.113
+ping 11.11.11.113
+
+~~~
+
+~~~
+!@BLDG-JP
+sudo su
+ifconfig eth0 208.8.8.102 netmask 255.255.255.0 up
+route add default gw 208.8.8.11
+ping 208.8.8.11
+
+~~~
+
+
+## Setup ZBF on RSTHAYUP R3
+
+~~~
+!@R3
+conf t
+ zone security OUTSIDE
+ zone security INSIDE
+ !
+ int e1/2
+  zone-member security INSIDE
+ int e1/1
+  zone-member security OUTSIDE
+ !
+ ip access-list extended MATCH-INOUT
+  permit ip any any
+ ip access-list extended MATCH-OUTIN
+  permit ip any any
+ !
+ class-map type inspect match-any CM-INOUT
+  match access-group name MATCH-INOUT
+ class-map type inspect match-any  CM-OUTIN
+  match access-group name MATCH-OUTIN
+ !
+ policy-map type inspect PM-INOUT
+  class type inspect CM-INOUT
+   inspect
+  class class-default
+   drop
+ policy-map type inspect PM-OUTIN
+  class type inspect CM-OUTIN
+   drop
+  class class-default
+   drop
+ !
+ zone-pair security ZP-INOUT source INSIDE dest OUTSIDE
+  service-policy type inspect PM-INOUT
+ zone-pair security ZP-OUTIN source OUTSIDE dest INSIDE
+  service-policy type inspect PM-OUTIN
+  end
+sh policy-map type inspect zone-pair 
+~~~
+
+
+
+<br>
+<br>
+
+---
+&nbsp;
+
+
+
+## ZBF with NAT on CSR1000v
+
+Modify ZBF to allow SSH from 208.8.8.102
+
+~~~
+!@UTM-PH
+conf t
+ no  ip access-list extended ALLOW-SSH
+ ip access-list extended ALLOW-SSH
+  permit tcp host 208.8.8.102  host 11.11.11.101 eq 22
+ !
+ class-map type inspect match-any CM-ALLOW-SSH
+  match access-group name ALLOW-SSH
+ !
+ zone-pair security ZP-OUTIN source OUTSIDE dest INSIDE
+  no service-policy type inspect PM-OUTIN
+ !
+ no policy-map type inspect PM-OUTIN
+ policy-map type inspect PM-OUTIN
+  class type inspect CM-ALLOW-SSH
+   inspect
+  class type inspect CM-OUTIN
+   drop log
+  class class-default
+   drop log
+ !
+ zone-pair security ZP-OUTIN source OUTSIDE dest INSIDE
+  service-policy type inspect PM-OUTIN
+  end
+~~~
+  
+NOTES: 
+- FW-ACL SPECIFY INSIDE LOCAL, 
+- SSH USE NAT PUB IP
+- ZONEPAIR NEEDS TO REMOVE POLICY THE REMOVE POLICY
+
+
+
+&nbsp;
+---
+&nbsp;
+
+
+
+Modify ZBF to allow HTTP from PC (208.8.8.1)
+
+~~~
+!@UTM-PH
+conf t
+ ip access-list extended WEB-PC
+  permit tcp host 208.8.8.1 host 11.11.11.101 eq 80
+ !
+ class-map type inspect match-any CM-WEB
+  match access-group name WEB-PC
+ !
+ zone-pair security ZP-OUTIN source OUTSIDE dest INSIDE
+  no service-policy type inspect PM-OUTIN
+ !
+ no policy-map type inspect PM-OUTIN
+ policy-map type inspect PM-OUTIN
+  class type inspect CM-ALLOW-SSH
+   inspect
+  class type inspect CM-WEB
+   inspect
+  class type inspect CM-OUTIN
+   drop log
+  class class-default
+   drop log
+ !
+ zone-pair security ZP-OUTIN source OUTSIDE dest INSIDE
+  service-policy type inspect PM-OUTIN
+  end
+~~~
+  
+
+&nbsp;
+---
+&nbsp;
+
+
+
+Modify ZBF to allow HTTPS from PC (208.8.8.1)
+
+~~~
+!@UTM-PH
+conf t
+ ip access-list extended WEBSEC-PC
+  permit tcp host 208.8.8.1 host 11.11.11.101 eq 443
+ !
+ class-map type inspect match-any CM-WEBSEC
+  match access-group name WEBSEC-PC
+ !
+ zone-pair security ZP-OUTIN source OUTSIDE dest INSIDE
+  no service-policy type inspect PM-OUTIN
+ !
+ no policy-map type inspect PM-OUTIN
+ policy-map type inspect PM-OUTIN
+  class type inspect CM-WEBSEC
+   inspect
+  class type inspect CM-ALLOW-SSH
+   inspect
+  class type inspect CM-WEB
+   inspect
+  class type inspect CM-OUTIN
+   drop log
+  class class-default
+   drop log
+ !
+ zone-pair security ZP-OUTIN source OUTSIDE dest INSIDE
+  service-policy type inspect PM-OUTIN
+  end
+~~~
+
+
+&nbsp;
+---
+&nbsp;
+
+
+
+Modify ZBF to allow SSH from PC (208.8.8.1)
+
+~~~
+!@UTM-PH
+conf t
+ ip access-list extended ALLOW-SSH
+  permit tcp host 208.8.8.1  host 11.11.11.101 eq 22
+  end
+~~~
+
+
+
+<br>
+<br>
+
+---
+&nbsp;
+
+
+
+## Quality of Service
+
+~~~
+!@BLDG-1
+sudo su
+ifconfig eth0 11.11.11.101 netmask 255.255.255.224 up
+route add default gw 11.11.11.113
+ping 11.11.11.113
+
+~~~
+
+~~~
+!@BLDG-2
+sudo su
+ifconfig eth0 11.11.11.102 netmask 255.255.255.224 up
+route add default gw 11.11.11.113
+ping 11.11.11.113
+
+~~~
+
+~~~
+!@BLDG-3
+sudo su
+ifconfig eth0 11.11.11.103 netmask 255.255.255.224 up
+route add default gw 11.11.11.113
+ping 11.11.11.113
+
+~~~
+
+
+
+MARKINGS (G1 Link - 1_000_000)
+
+~~~
+!@UTM-PH
+conf t
+ ip access-list extended ACL-B1
+  permit ip host 11.11.11.101 any
+ ip access-list extended ACL-B2
+  permit ip host 11.11.11.102 any
+ !
+ class-map match-any CM-B1
+  match access-group name ACL-B1
+ class-map match-any CM-B2
+  match access-group name ACL-B2
+ !
+ no policy-map QOS
+ policy-map QOS
+  class CM-B1
+   set dscp AF11
+  class CM-B2
+   set dscp CS1
+  class class-default
+   set dscp default
+ !
+ int g3
+  service-policy input QOS
+  end
+~~~
+
+
+
+TRAFFIC POLICING
+
+~~~
+!@UTM-PH
+conf t
+ class-map match-all VIP
+  match dscp af11 af12 af13
+ class-map match-all DUKHA
+  match dscp cs1
+ !
+ no policy-map POLICE
+ policy-map POLICE
+  class VIP
+   priority 5000     !- if 100kbps is used drop your traffic
+   set dscp CS6
+  class DUKHA
+   bandwidth 10
+   set dscp default
+ !
+ int g1
+  service-policy output POLICE
+  end
+sh int g1 | inc BW
+show int g1 sum
+~~~
+
+
+****************
+Modify TRAFFIC MARKINGS & POLICING
+
+~~~
+!@UTM-PH
+conf t
+ ip access-list extended B1-QOS
+  permit ip host 11.11.11.101 any
+ ip access-list extended B2-QOS
+  permit ip host 11.11.11.102 any
+ !
+ class-map match-any CM-B1
+  match access-group name B1-QOS
+ class-map match any CM-B2
+  match access-group name B2-QOS
+ !
+ policy 
