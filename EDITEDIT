@@ -333,7 +333,7 @@ conf t
  no policy-map POLICE
  policy-map POLICE
   class VIP
-   priority 5000     !- if 100kbps is used drop your traffic
+   priority 5000     !- if 5mbps is used drop your traffic
    set dscp CS6
   class DUKHA
    bandwidth 10
