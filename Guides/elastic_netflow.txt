@@ -1,0 +1,80 @@
+!@Linux
+sudo timedatectl set-timezone UTC
+timedatectl set-timezone Asia/Kuala_Lumpur
+!
+firewall-cmd --add-port=2055/udp --permanent
+firewall-cmd --reload
+
+
+
+!@Linux
+nano /etc/filebeat/filebeat.yml
+
+  username: "admin"
+  password: "C1sc0123"
+
+
+
+!@Linux
+filebeat modules enable netflow
+nano /etc/filebeat/modules.d/netflow.yml
+
+- module: netflow
+  log:
+    enabled: true
+    var.netflow_host: 0.0.0.0
+    var.netflow_port: 2055
+
+
+
+
+!@Linux
+systemctl start elasticsearch
+filebeat setup --pipelines --modules netflow
+systemctl restart filebeat
+ss -ulnp | grep 2055
+
+
+
+
+!@Cisco CSR1000v
+conf t
+ no flow record FLOW_RECORD
+ flow record FLOW_RECORD
+  match ipv4 source address
+  match ipv4 destination address
+  match transport source-port
+  match transport destination-port
+  match ipv4 protocol
+  match ipv4 version
+  match interface input
+  match interface output
+  collect counter bytes
+  collect counter packets
+  collect transport tcp flags
+  collect flow direction
+  collect timestamp absolute first
+  collect timestamp absolute last
+  !
+  collect ipv4 tos
+  collect ipv4 ttl
+  collect routing next-hop address ipv4
+  collect application name
+  collect routing source as
+  collect routing destination as
+ !
+ flow exporter FLOW_EXPORTER
+  destination 192.168.102.133
+  transport udp 2055
+  template data timeout 60
+  option interface-table timeout 60
+  option exporter-stats timeout 60
+ !
+ flow monitor FLOW_MONITOR
+  exporter FLOW_EXPORTER
+  record FLOW_RECORD
+ !
+ interface GigabitEthernet1
+  ip flow monitor FLOW_MONITOR input
+  ip flow monitor FLOW_MONITOR output
+  end
