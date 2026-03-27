@@ -1,3 +1,10 @@
+Set Switchports to L3  "PORT1 MUST BE PART OF LAN"  = VLAN1
+config system virtual-switch
+ edit lan
+  config port
+   delete port2
+
+
 config system interface
  edit wan1
   set mode static
