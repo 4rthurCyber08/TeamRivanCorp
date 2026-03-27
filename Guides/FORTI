@@ -1,3 +1,68 @@
+config t
+   hostname COREbaba-~~
+   enable secret pass
+   service password-encryption
+   no logging console
+   no ip domain-lookup
+   line console 0
+     password pass
+     login
+     exec-timeout 0 0
+    line vty 0 14
+      password pass
+      login
+      exec-timeout 0 0
+   Int Gi 0/1
+     no shutdown
+	  no switchport
+	  ip add 10.~~.~~.4 255.255.255.128
+   Int Vlan 1
+     no shutdown
+	 ip add 10.~~.1.4 255.255.255.0
+	 description MGMTDATA
+   Int Vlan 10
+     no shutdown
+	 ip add 10.~~.10.4 255.255.255.0
+	 description WIRELESS
+   Int Vlan 50
+     no shutdown
+	 ip add 10.~~.50.4 255.255.255.0
+	 description IPCCTV
+   Int Vlan 100
+     no shutdown
+	 ip add 10.~~.100.4 255.255.255.0
+	 description VOICEVLAN
+end
+
+
+config t
+   hostname EDGE-~~
+   enable secret pass
+   service password-encryption
+   no logging console
+   no ip domain-lookup
+   line console 0
+     password pass
+     login
+     exec-timeout 0 0
+    line vty 0 14
+      password pass
+      login
+      exec-timeout 0 0
+   Int Gi 0/0/0
+     description FIBEROPTIC-TO-SWITCH
+     ip add 10.~~.~~.130 255.255.255.128
+	 no shutdown
+   Int Gi 0/0/1
+     description PLDT-ME-WAN
+	 ip add 200.0.0.~~ 255.255.255.0
+	 no shutdown
+   Int Loopback 0
+     description VIRTUALIP-FOR-ROUTING
+	 ip add ~~.0.0.1 255.255.255.255
+ end
+
+
 Set Switchports to L3  "PORT1 MUST BE PART OF LAN"  = VLAN1
 config system virtual-switch
  edit lan
