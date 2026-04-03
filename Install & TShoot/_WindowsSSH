@@ -1,0 +1,2 @@
+Add-WindowsCapability -Online -Name OpenSSH.Server
+start-service sshd
