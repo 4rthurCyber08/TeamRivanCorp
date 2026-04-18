@@ -1,0 +1,1 @@
+genisoimage -o day0.iso -J -r iosxe_config.txt
