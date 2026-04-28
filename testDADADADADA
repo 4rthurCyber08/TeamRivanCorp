@@ -1,0 +1,372 @@
+# Setup
+
+!@BLDG-PH
+sudo su
+ ifconfig eth0 10.11.11.101 netmask 255.255.255.0 up
+ route add default gw 10.11.11.113
+ !
+ 
+!@BLDG-JP
+sudo su
+ ifconfig eth0 10.21.21.211 netmask 255.255.255.0 up
+ route add default gw 10.21.21.213
+ !
+ 
+!@BLDG-US
+sudo su
+ ifconfig eth0 10.0.0.1 netmask 255.255.255.252 up
+ route add default gw 10.0.0.2
+ !
+
+
+
+# DMVPN Configuration
+
+## PHASE 1 - Internet Key Exchange
+
+:HUB:
+
+!@UTM-US
+conf t
+ crypto ikev2 proposal PROPOSAL-1
+  encryption aes-cbc-256
+  integrity sha256
+  group 14
+ !
+ crypto ikev2 proposal PROPOSAL-2
+  encryption aes-gcm-256
+  prf sha256
+  group 14
+ !
+ crypto ikev2 policy POLICY-1
+  proposal PROPOSAL-1 
+  proposal PROPOSAL-2
+ !
+ crypto ikev2 keyring KEY-1
+  peer SPOKES
+   address 0.0.0.0 0.0.0.0
+   pre-shared-key C1sc0123
+ !
+ crypto ikev2 profile PROFILE-1
+  match identity remote address 0.0.0.0 0.0.0.0
+  authentication local pre-share
+  authentication remote pre-share
+  keyring local KEY-1
+  end
+
+ 
+:SPOKES:
+
+!@UTM-PH,UTM-JP
+conf t
+ crypto ikev2 proposal PROPOSAL-1
+  encryption aes-cbc-256
+  integrity sha256
+  group 14
+ !
+ crypto ikev2 proposal PROPOSAL-2
+  encryption aes-gcm-256
+  prf sha256
+  group 14
+ !
+ crypto ikev2 policy POLICY-1
+  proposal PROPOSAL-1 
+  proposal PROPOSAL-2
+ !
+ crypto ikev2 keyring KEY-1
+  peer HUB
+   address 208.8.8.13 
+   pre-shared-key C1sc0123
+  peer SPOKES
+   address 208.8.8.0 255.255.255.0
+   pre-shared-key C1sc0123
+ !
+ crypto ikev2 profile PROFILE-1
+  match identity remote address 208.8.8.13
+  match identity remote address 208.8.8.0 255.255.255.0
+  authentication local pre-share
+  authentication remote pre-share
+  keyring local KEY-1
+  end
+
+
+
+## PHASE 2 - INTERNET PROTOCOL SECURITY
+
+:HUB:
+
+!@UTM-US
+conf t
+ crypto ipsec transform-set TS1 esp-256-aes esp-sha256-hmac
+  mode tunnel
+ !
+ crypto ipsec transform-set TS2 esp-gcm 256
+  mode tunnel
+ !
+ crypto ipsec profile IPSEC-PROFILE-1
+  set transform-set TS1 TS2
+  set pfs group14
+  set ikev2-profile PROFILE-1
+ !
+ interface tunnel 1
+  ip add 172.16.1.254 255.255.255.0
+  tunnel source g1
+  tunnel protection ipsec profile IPSEC-PROFILE-1
+  tunnel mode gre multipoint
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast dynamic
+  ip nhrp redirect
+  end
+ 
+
+:SPOKES:
+
+!@UTM-PH
+conf t
+ crypto ipsec transform-set TS1 esp-256-aes esp-sha256-hmac
+  mode tunnel
+ !
+ crypto ipsec transform-set TS2 esp-gcm 256
+  mode tunnel
+ !
+ crypto ipsec profile IPSEC-PROFILE-1
+  set transform-set TS1 TS2
+  set pfs group14
+  set ikev2-profile PROFILE-1
+ !
+ interface tunnel 1
+  ip add 172.16.1.11 255.255.255.0
+  tunnel source g1
+  tunnel mode gre multipoint
+  tunnel protection ipsec profile IPSEC-PROFILE-1
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp nhs 172.16.1.254
+  ip nhrp map 172.16.1.254 208.8.8.13
+  ip nhrp map multicast 208.8.8.13
+  end
+
+
+!@UTM-JP
+conf t
+ crypto ipsec transform-set TS1 esp-256-aes esp-sha256-hmac
+  mode tunnel
+ !
+ crypto ipsec transform-set TS2 esp-gcm 256
+  mode tunnel
+ !
+ crypto ipsec profile IPSEC-PROFILE-1
+  set transform-set TS1 TS2
+  set pfs group14
+  set ikev2-profile PROFILE-1
+ !
+ interface tunnel 1
+  ip add 172.16.1.12 255.255.255.0
+  tunnel source g1
+  tunnel mode gre multipoint
+  tunnel protection ipsec profile IPSEC-PROFILE-1
+  ip nhrp network-id 1337
+  ip nhrp authentication C1sc0123
+  ip nhrp nhs 172.16.1.254
+  ip nhrp map 172.16.1.254 208.8.8.13
+  ip nhrp map multicast 208.8.8.13
+  end
+
+
+## ROUTING
+
+### EIGRP
+
+!@UTM-US
+conf t
+ router eigrp 100
+  no auto-summary
+  network 172.16.1.0 0.0.0.255
+  network 10.0.0.0 0.0.0.3
+ !
+ interface tunnel 1
+  no ip split-horizon eigrp 100
+  no ip next-hop-self eigrp 100
+  end
+
+
+!@UTM-PH
+conf t
+ router eigrp 100
+  no auto-summary
+  network 172.16.1.0 0.0.0.255
+  network 10.11.11.96 0.0.0.31
+ !
+ interface tunnel 1
+  no ip split-horizon eigrp 100
+  no ip next-hop-self eigrp 100
+  end
+
+
+!@UTM-JP
+conf t
+ router eigrp 100
+  no auto-summary
+  network 172.16.1.0 0.0.0.255
+  network 10.21.21.208 0.0.0.15
+ !
+ interface tunnel 1
+  no ip split-horizon eigrp 100
+  no ip next-hop-self eigrp 100
+  end
+
+
+
+### OSPF
+
+!@UTM-US
+conf t
+ router ospf 1
+  router-id 172.16.1.13
+  network 172.16.1.0 0.0.0.255 area 0
+  network 10.0.0.0 0.0.0.3 area 0
+ !
+ interface tunnel 1
+  ip ospf network point-to-multipoint
+  ip mtu 1400
+  ip tcp adjust-mss 1360
+  bandwidth 1000000
+  delay 1000
+  end
+
+
+!@UTM-PH
+conf t
+ router ospf 1
+  router-id 172.16.1.11
+  network 172.16.1.0 0.0.0.255 area 0
+  network 10.11.11.96 0.0.0.31 area 0
+ !
+ interface tunnel 1
+  ip ospf network point-to-multipoint
+  ip mtu 1400
+  ip tcp adjust-mss 1360
+  bandwidth 1000000
+  delay 1000
+  end
+
+
+!@UTM-JP
+conf t
+ router ospf 1
+  router-id 172.16.1.12
+  network 172.16.1.0 0.0.0.255 area 0
+  network 10.21.21.208 0.0.0.15 area 0
+ !
+ interface tunnel 1
+  ip ospf network point-to-multipoint
+  ip mtu 1400
+  ip tcp adjust-mss 1360
+  bandwidth 1000000
+  delay 1000
+  end
+  
+
+## ZONE-BASED FIREWALL
+
+### STEP 1 - DEFINE & ASSIGN ZONES
+
+!@UTM-US,UTM-PH,UTM-JP
+conf t
+ zone security INSIDE
+ zone security OUTSIDE
+ zone security DMZ
+ !
+ interface g1
+  zone-member security OUTSIDE
+ interface g3
+  zone-member security INSIDE
+ interface tunnel1
+  zone-member security OUTSIDE
+  end
+
+
+### STEP 2 - MATCH TRAFFIC (ACL)
+
+!@UTM-US,UTM-PH,UTM-JP
+conf t
+ ip access-list extended ACL-ALL-TRAFFIC
+  permit ip any any
+  end
+
+### STEP 3 - CLASSIFY TRAFFIC
+
+!@UTM-US,UTM-PH,UTM-JP
+conf t
+ class-map type inspect match-any CM-ALL-TRAFFIC
+  match access-group name ACL-ALL-TRAFFIC
+  end
+
+
+### STEP 4 - SPECIFY WHAT TO DO WITH THE TRAFFIC
+
+!@UTM-US,UTM-PH,UTM-JP
+conf t
+ policy-map type inspect PM-IN-TO-OUT
+  class type inspect CM-ALL-TRAFFIC
+   inspect
+  class class-default 
+   drop log
+ !
+ policy-map type inspect PM-OUT-TO-IN
+  class type inspect CM-ALL-TRAFFIC
+   drop log
+  class class-default
+   drop log
+   end
+
+
+### STEP 5 - ASSIGN ZONE-PAIRS FOR DIRECTIONAL TRAFFIC
+
+!@UTM-US,UTM-PH,UTM-JP
+conf t
+ zone-pair security ZP-IN-TO-OUT source INSIDE destination OUTSIDE
+  service-policy type inspect PM-IN-TO-OUT
+ zone-pair security ZP-OUT-TO-IN source OUTSIDE destination INSIDE
+  service-policy type inspect PM-OUT-TO-IN
+  end
+
+
+
+
+### STEP 6 - SETUP DMZ
+
+!@UTM-PH
+conf t
+ interface g3
+  zone-member security DMZ
+ interface tunnel1
+  zone-member security OUTSIDE
+ !
+ ip access-list extended ACL-SSH-ACCESS
+  permit tcp host 208.8.8.12 host 10.11.11.101 eq 22
+ !
+ class-map type inspect match-all CM-SSH-ACCESS
+  match access-group name ACL-SSH-ACCESS
+  match protocol ssh
+ !
+ policy-map type inspect PM-DMZ-TO-OUT
+  class type inspect CM-ALL-TRAFFIC
+   inspect
+  class class-default
+   drop log
+ !
+ policy-map type inspect PM-OUT-TO-DMZ
+  class type inspect CM-SSH-ACCESS
+   inspect
+  class type inspect CM-ALL-TRAFFIC
+   drop log
+  class class-default
+   drop log
+ !
+ zone-pair security ZP-DMZ-TO-OUT source DMZ destination OUTSIDE
+  service-policy type inspect PM-DMZ-TO-OUT
+ zone-pair security ZP-OUT-TO-DMZ source OUTSIDE destination DMZ
+  service-policy type inspect PM-OUT-TO-DMZ
+  end
