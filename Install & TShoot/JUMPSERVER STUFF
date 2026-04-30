@@ -1,0 +1,11 @@
+DOMAINS
+
+nano /opt/jumpserver/config/config.txt
+
+SET DOMAINS=""
+
+*******************
+
+nano /opt/jumpserver-
+
+./jmsctl restart
