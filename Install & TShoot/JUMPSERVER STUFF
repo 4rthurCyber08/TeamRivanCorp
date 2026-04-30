@@ -9,3 +9,27 @@ SET DOMAINS=""
 nano /opt/jumpserver-
 
 ./jmsctl restart
+
+
+
+
+***************
+
+200.0.0.11  pam11.rivan.com
+200.0.0.12  pam12.rivan.com
+208.8.8.100 pam21.rivan.com
+200.0.0.22  pam22.rivan.com
+200.0.0.31  pam31.rivan.com
+200.0.0.32  pam32.rivan.com
+200.0.0.41  pam41.rivan.com
+200.0.0.42  pam42.rivan.com
+200.0.0.51  pam51.rivan.com
+200.0.0.52  pam52.rivan.com
+200.0.0.61  pam61.rivan.com
+200.0.0.62  pam62.rivan.com
+200.0.0.71  pam71.rivan.com
+200.0.0.72  pam72.rivan.com
+200.0.0.81  pam81.rivan.com
+200.0.0.82  pam82.rivan.com
+200.0.0.91  pam91.rivan.com
+200.0.0.92  pam92.rivan.com
