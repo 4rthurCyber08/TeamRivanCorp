@@ -1,0 +1,443 @@
+# DMVPN Lab 
+
+## BGP
+
+| ISP | ASN   |
+| --- | ---   |
+| I1  | 1     |
+| I2  | 23    |
+| I3  | 23    |
+| Ex  | 12345 |
+
+
+~~~
+!@I1
+conf t
+ router bgp 1
+  bgp log-neighbor-changes
+  neighbor 12.1.2.2 remote-as 23
+  neighbor 13.1.3.3 remote-as 23
+  neighbor 1.10.1.10 remote-as 12345
+  neighbor 3.30.3.30 remote-as 12345
+  address-family ipv4
+   neighbor 12.1.2.2 activate
+   neighbor 13.1.3.3 activate
+   neighbor 1.10.1.10 activate
+   neighbor 3.30.3.30 activate
+   network 12.1.2.0 mask 255.255.255.0
+   network 13.1.3.0 mask 255.255.255.0
+   network 1.10.1.0 mask 255.255.255.0
+   network 3.30.3.0 mask 255.255.255.0
+   network 8.8.8.8 mask 255.255.255.255
+   end
+~~~
+
+<br>
+
+~~~
+!@I2
+conf t
+ router bgp 23
+  bgp log-neighbor-changes
+  neighbor 12.1.2.1 remote-as 1
+  neighbor 2.20.2.20 remote-as 12345
+  neighbor 5.50.5.50 remote-as 12345
+  address-family ipv4
+   neighbor 12.1.2.1 activate
+   neighbor 2.20.2.20 activate
+   neighbor 5.50.5.50 activate
+   network 12.1.2.0 mask 255.255.255.0
+   network 2.20.2.0 mask 255.255.255.0
+   network 5.50.5.0 mask 255.255.255.0
+   end   
+~~~
+
+<br>
+
+~~~
+!@I3
+conf t
+ router bgp 23
+  bgp log-neighbor-changes
+  neighbor 13.1.3.1 remote-as 1
+  neighbor 4.40.4.40 remote-as 12345
+  address-family ipv4
+   neighbor 13.1.3.1 activate
+   neighbor 4.40.4.40 activate
+   network 13.1.3.0 mask 255.255.255.0 
+   network 4.40.4.0 mask 255.255.255.0
+   end
+~~~
+
+<br>
+
+~~~
+!@E1
+conf t
+ router bgp 12345
+  bgp log-neighbor-changes
+  neighbor 1.10.1.1 remote-as 1
+  address-family ipv4
+   neighbor 1.10.1.1 activate
+   network 1.10.1.0 mask 255.255.255.0
+   end
+~~~
+
+<br>
+
+~~~
+!@E2
+conf t
+ router bgp 12345
+  bgp log-neighbor-changes
+  neighbor 2.20.2.2 remote-as 23
+  address-family ipv4
+   neighbor 2.20.2.2 activate
+   network 2.20.2.0 mask 255.255.255.0
+   end
+~~~
+
+<br>
+
+~~~
+!@E3
+conf t
+ router bgp 12345
+  bgp log-neighbor-changes
+  neighbor 3.30.3.1 remote-as 1
+  address-family ipv4
+   neighbor 3.30.3.1 activate
+   network 3.30.3.0 mask 255.255.255.0
+   end
+~~~
+
+<br>
+
+~~~
+!@E4
+conf t
+ router bgp 12345
+  bgp log-neighbor-changes
+  neighbor 4.40.4.3 remote-as 23
+  address-family ipv4
+   neighbor 4.40.4.3 activate
+   network 4.40.4.0 mask 255.255.255.0
+   end
+~~~
+
+<br>
+
+~~~
+!@E5
+conf t
+ router bgp 12345
+  bgp log-neighbor-changes
+  neighbor 5.50.5.2 remote-as 23
+  address-family ipv4
+   neighbor 5.50.5.2 activate
+   network 5.50.5.0 mask 255.255.255.0
+   end
+~~~
+
+
+<br>
+<br>
+
+---
+&nbsp;
+
+
+### BGP Advertisement
+
+__AllowAS-In__
+~~~
+!@I2
+conf t
+ router bgp 23
+  neighbor 12.1.2.1 allowas-in
+  end
+~~~
+
+<br>
+
+~~~
+!@I3
+conf t
+ router bgp 23
+  neighbor 13.1.3.1 allowas-in
+  end
+~~~
+
+
+&nbsp;
+---
+&nbsp;
+
+
+__AS-Override__
+~~~
+!@I1
+conf t
+ router bgp 1
+  neighbor 1.10.1.10 as-override
+  neighbor 3.30.3.30 as-override
+  end
+~~~
+
+<br>
+
+~~~
+!@I2
+conf t
+ router bgp 23
+  neighbor 2.20.2.20 as-override
+  neighbor 5.50.5.50 as-override
+  end
+~~~
+
+<br>
+
+~~~
+!@I3
+conf t
+ router bgp 23
+  neighbor 4.40.4.40 as-override
+  end
+~~~
+
+
+<br>
+<br>
+
+---
+&nbsp;
+
+
+## DMVPN
+
+__PHASE 1__
+~~~
+!@E1,E2,E3,E4,E5
+conf t
+ crypto ikev2 proposal PROP1
+  encr aes-cbc-256
+  integrity sha256
+  group 14
+ crypto ikev2 proposal PROP2
+  encr aes-gcm-256
+  prf sha256
+  group 14
+ !
+ crypto ikev2 policy IKEV2-POL1
+  proposal PROP1
+  proposal PROP2
+ !
+ crypto ikev2 keyring KEY1
+  peer E1
+   address 1.10.1.10 255.255.255.255
+   pre-shared-key C1sc0123
+  peer E2
+   address 2.20.2.20 255.255.255.255
+   pre-shared-key C1sc0123
+  peer E3
+   address 3.30.3.30 255.255.255.255
+   pre-shared-key C1sc0123
+  peer E4
+   address 4.40.4.40 255.255.255.255
+   pre-shared-key C1sc0123
+  peer E5
+   address 5.50.5.50 255.255.255.255
+   pre-shared-key C1sc0123
+ !
+ crypto ikev2 profile IKEV2-PROF1
+  match identity remote address 1.10.1.10
+  match identity remote address 2.20.2.20
+  match identity remote address 3.30.3.30
+  match identity remote address 4.40.4.40
+  match identity remote address 5.50.5.50
+  authentication remote pre-share
+  authentication local pre-share
+  keyring local KEY1
+  end
+~~~
+
+<br>
+
+__PHASE 2__
+~~~
+!@E1,E2,E3,E4,E5
+conf t
+ crypto ipsec transform-set TS1 esp-aes 256 esp-sha256-hmac
+  mode tunnel
+ crypto ipsec transform-set TS2 esp-gcm 256
+  mode tunnel
+ !
+ crypto ipsec profile IPSEC-PROF1
+  set transform-set TS1 TS2
+  set ikev2-profile IKEV2-PROF1
+  set pfs group14
+  end
+~~~
+
+<br>
+
+~~~
+!@E1
+conf t
+ int tunnel0
+  ip add 172.16.1.254 255.255.255.0
+  tunnel mode gre multipoint
+  tunnel source e0/1
+  tunnel protection ipsec profile IPSEC-PROF1
+  ip nhrp network-id 12345
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast dynamic
+  ip nhrp redirect
+  end
+~~~
+
+<br>
+
+~~~
+!@E3
+conf t
+ int tunnel0
+  ip add 172.16.1.3 255.255.255.0
+  tunnel mode gre multipoint
+  tunnel source e0/1
+  tunnel protection ipsec profile IPSEC-PROF1
+  ip nhrp network-id 12345
+  ip nhrp authentication C1sc0123
+  ip nhrp map 172.16.1.254  1.10.1.10
+  ip nhrp map multicast 1.10.1.10
+  ip nhrp nhs 172.16.1.254
+  ip nhrp shortcut
+  end
+~~~
+
+<br>
+
+~~~
+!@E4
+conf t
+ int tunnel0
+  ip add 172.16.1.4 255.255.255.0
+  tunnel mode gre multipoint
+  tunnel source e0/1
+  tunnel protection ipsec profile IPSEC-PROF1
+  ip nhrp network-id 12345
+  ip nhrp authentication C1sc0123
+  ip nhrp map 172.16.1.254  1.10.1.10
+  ip nhrp map multicast 1.10.1.10
+  ip nhrp nhs 172.16.1.254
+  ip nhrp shortcut
+  end
+~~~
+
+<br>
+
+~~~
+!@E5
+conf t
+ int tunnel0
+  ip add 172.16.1.5 255.255.255.0
+  tunnel mode gre multipoint
+  tunnel source e0/1
+  tunnel protection ipsec profile IPSEC-PROF1
+  ip nhrp network-id 12345
+  ip nhrp authentication C1sc0123
+  ip nhrp map 172.16.1.254  1.10.1.10
+  ip nhrp map multicast 1.10.1.10
+  ip nhrp nhs 172.16.1.254
+  ip nhrp shortcut
+  end
+~~~
+
+
+<br>
+<br>
+
+
+### Routing
+
+~~~
+!@E1
+conf t
+ router eigrp 100
+  network 10.1.1.0 0.0.0.3
+  network 172.16.1.0 0.0.0.255
+ !
+ int tunnel0
+  no ip split-horizon eigrp 100
+  no ip next-hop-self eigrp 100
+  end
+~~~
+
+<br>
+
+~~~
+!@S1
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.1.1.2
+ end
+~~~
+
+<br>
+
+~~~
+!@E3
+conf t
+ router eigrp 100
+  network 192.168.3.0 0.0.0.255
+  network 172.16.1.0 0.0.0.255
+  end
+~~~
+
+<br>
+
+~~~
+!@P1
+conf t
+ ip route 0.0.0.0 0.0.0.0 192.168.3.3
+ end
+~~~
+
+<br>
+
+~~~
+!@E4
+conf t
+ router eigrp 100
+  network 192.168.4.0 0.0.0.255
+  network 172.16.1.0 0.0.0.255
+  end
+~~~
+
+<br>
+
+~~~
+!@P2
+conf t
+ ip route 0.0.0.0 0.0.0.0 192.168.4.4
+ end
+~~~
+
+<br>
+
+~~~
+!@E5
+conf t
+ router eigrp 100
+  network 192.168.5.0 0.0.0.255
+  network 172.16.1.0 0.0.0.255
+  end
+~~~
+
+<br>
+
+~~~
+!@P3
+conf t
+ ip route 0.0.0.0 0.0.0.0 192.168.5.5
+ end
+~~~
