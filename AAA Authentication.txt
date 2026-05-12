@@ -22,6 +22,8 @@ conf t
 conf t
  aaa group server radius RADGROUP
   server name WINRAD
+  ip vrf forwarding MANAGEMENT
+ ip radius source-interface e3/0
   end
 
 4. Configure AAA
