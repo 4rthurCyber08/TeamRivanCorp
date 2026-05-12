@@ -1,3 +1,17 @@
+# Setup
+
+- Windows Server
+- VPN
+
+~~~
+!@WinVM-cmd
+route add 172.16.29.0 mask 255.255.255.0 10.69.255.6
+~~~
+
+
+
+CCNP Day 5
+
 # DMVPN Lab 
 
 ## BGP
@@ -299,6 +313,23 @@ conf t
 <br>
 
 ~~~
+!@E2
+conf t
+ int tunnel0
+  ip add 172.16.1.253 255.255.255.0
+  tunnel mode gre multipoint
+  tunnel source e0/1
+  tunnel protection ipsec profile IPSEC-PROF1
+  ip nhrp network-id 12345
+  ip nhrp authentication C1sc0123
+  ip nhrp map multicast dynamic
+  ip nhrp redirect
+  end
+~~~
+
+<br>
+
+~~~
 !@E3
 conf t
  int tunnel0
@@ -309,8 +340,11 @@ conf t
   ip nhrp network-id 12345
   ip nhrp authentication C1sc0123
   ip nhrp map 172.16.1.254  1.10.1.10
+  ip nhrp map 172.16.1.253  2.20.2.20
   ip nhrp map multicast 1.10.1.10
+  ip nhrp map multicast 2.20.2.20
   ip nhrp nhs 172.16.1.254
+  ip nhrp nhs 172.16.1.253
   ip nhrp shortcut
   end
 ~~~
@@ -328,8 +362,11 @@ conf t
   ip nhrp network-id 12345
   ip nhrp authentication C1sc0123
   ip nhrp map 172.16.1.254  1.10.1.10
+  ip nhrp map 172.16.1.253  2.20.2.20
   ip nhrp map multicast 1.10.1.10
+  ip nhrp map multicast 2.20.2.20
   ip nhrp nhs 172.16.1.254
+  ip nhrp nhs 172.16.1.253
   ip nhrp shortcut
   end
 ~~~
@@ -347,15 +384,19 @@ conf t
   ip nhrp network-id 12345
   ip nhrp authentication C1sc0123
   ip nhrp map 172.16.1.254  1.10.1.10
+  ip nhrp map 172.16.1.253  2.20.2.20
   ip nhrp map multicast 1.10.1.10
+  ip nhrp map multicast 2.20.2.20
   ip nhrp nhs 172.16.1.254
+  ip nhrp nhs 172.16.1.253
   ip nhrp shortcut
   end
 ~~~
 
 
-<br>
-<br>
+&nbsp;
+---
+&nbsp;
 
 
 ### Routing
@@ -371,6 +412,39 @@ conf t
   no ip split-horizon eigrp 100
   no ip next-hop-self eigrp 100
   end
+~~~
+
+<br>
+
+~~~
+!@S1
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.1.1.2
+ end
+~~~
+
+<br>
+
+~~~
+!@E2
+conf t
+ router eigrp 100
+  network 10.2.2.0 0.0.0.3
+  network 172.16.1.0 0.0.0.255
+ !
+ int tunnel0
+  no ip split-horizon eigrp 100
+  no ip next-hop-self eigrp 100
+  end
+~~~
+
+<br>
+
+~~~
+!@S2
+conf t
+ ip route 0.0.0.0 0.0.0.0 10.2.2.2
+ end
 ~~~
 
 <br>
@@ -441,3 +515,286 @@ conf t
  ip route 0.0.0.0 0.0.0.0 192.168.5.5
  end
 ~~~
+
+
+&nbsp;
+---
+&nbsp;
+
+
+# DMVPN : Certificate Auth
+
+__DNS__
+| Domain        | IP Address |
+| ---           | ---        |
+| e1.ccnp92.com | 1.10.1.10  |
+| e2.ccnp92.com | 2.20.2.20  |
+| e3.ccnp92.com | 3.30.3.30  |
+| e4.ccnp92.com | 4.40.4.40  |
+| e5.ccnp92.com | 5.50.5.50  |
+
+
+
+__TRUSTPOINTS__
+~~~
+!@E1
+conf t
+ crypto key generate rsa modulus 2048 label CERTKEY
+ !
+ crypto pki trustpoint CCNPTRUST
+  enrollment url http://10.69.255.4/certsrv/mscep/mscep.dll
+  serial-number
+  fqdn e1.ccnp92.com
+  ip-address 1.10.1.10
+  subject-name CN=E1,OU=HQ,O=RIVANCORP,L=MANILA,ST=NCR,C=PH
+  subject-alt-name e1.ccnp92.com
+  revocation-check none
+  source interface e3/0
+  rsakeypair CERTKEY
+  vrf MANAGEMENT
+  exit
+ !
+ crypto pki authenticate CCNPTRUST
+~~~
+
+<br>
+
+~~~
+!@E2
+conf t
+ crypto key generate rsa modulus 2048 label CERTKEY
+ !
+ crypto pki trustpoint CCNPTRUST
+  enrollment url http://10.69.255.4/certsrv/mscep/mscep.dll
+  serial-number
+  fqdn e2.ccnp92.com
+  ip-address 2.20.2.20
+  subject-name CN=E2,OU=HQ,O=RIVANCORP,L=MARIKINA,ST=NCR,C=PH
+  subject-alt-name e2.ccnp92.com
+  revocation-check none
+  source interface e3/0
+  rsakeypair CERTKEY
+  vrf MANAGEMENT
+  exit
+ !
+ crypto pki authenticate CCNPTRUST
+~~~
+
+<br>
+
+~~~
+!@E3
+conf t
+ crypto key generate rsa modulus 2048 label CERTKEY
+ !
+ crypto pki trustpoint CCNPTRUST
+  enrollment url http://10.69.255.4/certsrv/mscep/mscep.dll
+  serial-number
+  fqdn e3.ccnp92.com
+  ip-address 3.30.3.30
+  subject-name CN=E3,OU=BRANCH3,O=RIVANCORP,L=MAKATI,ST=NCR,C=PH
+  subject-alt-name e3.ccnp92.com
+  revocation-check none
+  source interface e3/0
+  rsakeypair CERTKEY
+  vrf MANAGEMENT
+  exit
+ !
+ crypto pki authenticate CCNPTRUST
+~~~
+
+<br>
+
+~~~
+!@E4
+conf t
+ crypto key generate rsa modulus 2048 label CERTKEY
+ !
+ crypto pki trustpoint CCNPTRUST
+  enrollment url http://10.69.255.4/certsrv/mscep/mscep.dll
+  serial-number
+  fqdn e4.ccnp92.com
+  ip-address 4.40.4.40
+  subject-name CN=E4,OU=BRANCH4,O=RIVANCORP,L=TOKYO,ST=KANTO,C=JP
+  subject-alt-name e4.ccnp92.com
+  revocation-check none
+  source interface e3/0
+  rsakeypair CERTKEY
+  vrf MANAGEMENT
+  exit
+ !
+ crypto pki authenticate CCNPTRUST
+~~~
+
+<br>
+
+~~~
+!@E5
+conf t
+ crypto key generate rsa modulus 2048 label CERTKEY
+ !
+ crypto pki trustpoint CCNPTRUST
+  enrollment url http://10.69.255.4/certsrv/mscep/mscep.dll
+  serial-number
+  fqdn e5.ccnp92.com
+  ip-address 5.50.5.50
+  subject-name CN=E5,OU=BRANCH5,O=RIVANCORP,L=WS,ST=WASHINGTON,C=US
+  subject-alt-name e5.ccnp92.com
+  revocation-check none
+  source interface e3/0
+  rsakeypair CERTKEY
+  vrf MANAGEMENT
+  exit
+ !
+ crypto pki authenticate CCNPTRUST
+~~~
+
+
+__Modify DMVPN Authentication__
+~~~
+!@E1,E2,E3,E4,E5
+conf t
+ crypto ikev2 profile IKEV2-PROF1
+  no authentication remote pre-share
+  authentication remote rsa-sig
+  authentication local rsa-sig
+  pki trustpoint CCNPTRUST
+  no keyring local KEY1
+  end
+~~~
+
+
+__Verify__
+~~~
+!@E1,E2,E3,E4,E5
+clear crypto ikev2 sa fast 
+sh crypto ikev2 sa
+~~~
+
+
+<br>
+<br>
+
+---
+&nbsp;
+
+
+# AAA Radius
+
+~~~
+!@All Devices
+conf t
+ int e3/0
+  no shut
+  end
+ping vrf MANAGEMENT 10.69.255.4
+~~~
+
+
+<br>
+
+
+~~~
+!@RST Devices
+conf t
+ aaa new-model
+ radius server WINRAD
+  address ipv4 10.69.255.4 auth-port 1812 acct-port 1813
+  key C1sc0123
+ !
+ aaa group server radius RADGROUP
+  server name WINRAD
+  ip vrf forwarding MANAGEMENT
+ ip radius source-int e3/0
+ !
+ aaa authentication login default group RADGROUP local
+ aaa authorization exec default group RADGROUP local
+ !
+ line vty 0 4
+  login authentication default
+  end
+~~~
+
+
+<br>
+<br>
+
+---
+&nbsp;
+
+
+# LISP
+- EID : Endpoint Identifier
+- Map Resolver/Server
+- Route Locator
+- ITR/ETR
+
+| EID            | RLOC      | 
+| ---            | ---       |
+| 192.168.3.0/24 | 3.30.3.30 |
+| 192.168.4.0/24 | 4.40.4.40 |
+| 192.168.5.0/24 | 5.50.5.50 |
+
+
+__Map Resolver /Map Server__
+~~~
+!@E1
+conf t
+ router lisp 1
+  ipv4 map-server
+  ipv4 map-resolver
+ !
+  site E3
+   eid-prefix 192.168.3.3/32 accept-more-specifics
+   authentication-key C1sc0123
+ !
+  site E4
+   eid-prefix 192.168.4.4/32 accept-more-specifics
+   authentication-key C1sc0123
+ !
+  site E5
+   eid-prefix 192.168.5.5/32 accept-more-specifics
+   authentication-key C1sc0123
+ !
+ ip lisp map-server
+ ip lisp map-resolver
+ end
+show lisp site summary
+show ip lisp map-cache
+show ip lisp database
+~~~
+
+
+~~~
+!@E3
+conf t
+ router lisp 1
+  ipv4 itr
+  ipv4 itr map-resolver 1.10.1.10
+  ipv4 etr
+  ipv4 etr map-server 1.10.1.10 key C1sc0123
+  !
+  site E3
+   authentication-key C1sc0123
+   eid-prefix 192.168.3.0/24 accept-more-specifics
+   exit
+  eid-table default instance-id 1 
+   database-mapping 192.168.3.0/24 3.30.3.30 priority 1 weight 100
+   end
+  
+~~~
+
+
+
+# FHRP
+# IP SLA
+# Time-Based ACL
+# Syslog
+# QoS
+# CoPP
+# NetFlow
+# 
+
+
+
+
