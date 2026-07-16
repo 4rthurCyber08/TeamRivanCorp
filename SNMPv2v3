@@ -1,0 +1,192 @@
+## SNMPv2, v3
+
+### Setup
+
+Devices:
+- 1x CSR1000v
+- 1x Zabbix
+
+CSR1000v:
+  Name: UTM-PH/R1-EDGE
+  
+  | NetAdapter   |        |
+  | ---          | ---    |
+  | NetAdapter   | NAT    |
+  | NetAdapter 2 | VMNet2 |
+  | NetAdapter 3 | VMNet3 |
+  
+
+Zabbix:
+  Name: Zabbix_appliance-7.4.6
+  
+  | NetAdapter   |        |
+  | ---          | ---    |
+  | NetAdapter   | NAT    |
+  
+  
+
+### Bootstrap
+~~~
+!@zabbix
+Login: root
+Pass:  zabbix
+
+# ip -4 addr
+
+Get IP Address and access via Web using the ff credentials:
+Login: Admin
+Pass:  zabbix
+~~~
+
+
+~~~
+!@UTM-PH
+conf t
+ hostname UTM-PH
+ enable secret pass
+ service password-encryption
+ no logging cons
+ no ip domain lookup
+ line vty 0 14
+  transport input all
+  password pass
+  login local
+  exec-timeout 0 0
+ int g1
+  ip add 208.8.8.11 255.255.255.0
+  no shut
+ int g2
+  ip add 192.168.102.11 255.255.255.0
+  no shut
+ int g3
+  ip add 192.168.103.11 255.255.255.0
+  no shut
+ !
+ username admin privilege 15 secret pass
+ ip http server
+ ip http secure-server
+ ip http authentication local
+ end
+wr
+!
+~~~
+
+
+
+### Setup Zabbix
+Users:
+  Your Name
+  - Username : xx
+  - Password : C1sc0123
+  - Role     : admin
+  - Group    : NOC
+  
+  Anne Curtiz
+  - Username : ac
+  - Password : C1sc0123
+  - Role     : User
+  - Group    : SOC
+
+  Zaldy Co
+  - Username : zc
+  - Password : C1sc0123
+  - Role     : User
+  - Group    : FINANCE
+
+  Groups:
+  - NOC
+  - SOC
+  - FINANCE
+
+
+Data Collection:
+  Host Groups
+  - VM-Firewalls
+
+  Hosts
+  - Host Name        : UTM-PH
+  - Templates        : Cisco IOS by SNMP
+  - Host Groups      : VM-Firewalls
+  - Interfaces
+    - IP             : 208.8.8.11
+	- SNMP Version   : SNMPv2
+	- SNMP Community : C1sc0123
+
+
+
+
+### SNMPv2 
+~~~
+!@UTM-PH
+conf t
+ ip access-list extended SNMP
+  permit ip host 208.8.8.132 any   !zabbix ip
+  exit
+ !
+ snmp-server community C1sc0123 ro SNMP
+ end
+~~~
+
+
+If SNMP is not available on Zabbix GUI
+~~~
+!@Zabbix
+systemctl restart zabbix-server
+~~~
+
+
+
+
+
+### SNMPv3
+
+~~~
+!@UTM-PH
+conf t
+ snmp-server group SUPERADMIN v3 priv
+ snmp-server group NOC        v3 priv
+ snmp-server group SOC        v3 priv
+ !
+ snmp-server user admin SUPERADMIN v3 auth sha C1sc0123 priv aes 256 C1sc0123 
+ end
+~~~
+
+
+ZabbixData Collection:
+  Hosts
+  - Host Name            : UTM-PH-v3
+  - Templates            : Cisco IOS by SNMP
+  - Host Groups          : VM-Firewalls
+  - Interfaces
+    - IP                 : 208.8.8.11
+	- SNMP Version       : SNMPv3
+	- Security Name      : admin
+	- Security Level     : authPriv
+	- Auth Protocol      : SHA256
+	- Auth Passphrase    : C1sc0123
+    - Privacy Protocl    : AES256
+    - Privacy Passphrase : C1sc0123	
+
+
+
+
+
+SNMP Access
+~~~
+!@UTM-PH
+conf t
+ ip access-list extended SNMPv3
+  remark SNMPv3-SERVER-ZABBIX
+  permit ip host 208.8.8.132 any
+  exit
+ !
+ snmp-server view SNMP-V3-RO-VIEW iso included
+ snmp-server view SNMP-V3-RW-VIEW iso included
+ ! 
+ snmp-server group SUPERADMIN v3 priv write SNMP-V3-RW-VIEW access SNMPv3
+ snmp-server group NOC        v3 priv write SNMP-V3-RW-VIEW access SNMPv3
+ snmp-server group SOC        v3 priv write SNMP-V3-RW-VIEW access SNMPv3
+ !
+ snmp-server user admin2 SNMP-V3-RW-VIEW v3 auth sha C1sc0123 priv aes 256 C1sc0123 
+ end
+~~~
