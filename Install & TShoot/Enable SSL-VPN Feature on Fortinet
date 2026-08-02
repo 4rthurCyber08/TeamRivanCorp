@@ -1,0 +1,11 @@
+!@Fortinet
+config system settings
+ set gui-sslvpn enable
+ set gui-vpn enable
+ set gui-sslvpn-realms enable
+ set gui-sslvpn-personal-bookmarks enable
+ end
+
+
+
+Certain Feature Visibility via CLI only
