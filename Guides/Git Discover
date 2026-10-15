@@ -1,0 +1,31 @@
+### Initialize Git - Required per upload
+git init
+git add .
+git commit -m "I was here"
+
+
+### Login via Credential Manager
+git push    # Perform actions needing to login
+
+git credential-manager github list
+git credential-manager github logout
+
+
+### Set Identity : NOT LOGIN INFO
+git config --global user.name
+git config --global user.email
+
+
+### Specify Repo
+git remote add origin https://github.com/YOUR_USERNAME/my-repo.git
+git remote -v
+git remote set-url origin https://github.com/YOUR_USERNAME/my-repo.git
+
+### Specify/Create Branch
+git branch main
+git branch -M TEST1   #Change Branches
+
+
+### Push desired Files/changes
+git push -u origin main
+git status
